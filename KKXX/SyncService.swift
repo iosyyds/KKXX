@@ -116,6 +116,27 @@ enum SyncError: LocalizedError {
     }
 }
 
+extension SyncService {
+    /// 判断错误是否属于「网络/链接失败」类（区别于服务器返回的业务错误）
+    static func isConnectionError(_ error: Error) -> Bool {
+        if let e = error as? SyncError {
+            if case .network = e { return true }
+            return false
+        }
+        if let u = error as? URLError {
+            switch u.code {
+            case .notConnectedToInternet, .timedOut, .cannotConnectToHost,
+                 .cannotFindHost, .networkConnectionLost, .dnsLookupFailed,
+                 .internationalRoamingOff, .dataNotAllowed, .resourceUnavailable:
+                return true
+            default:
+                return false
+            }
+        }
+        return false
+    }
+}
+
 struct SyncService {
     private let session: URLSession = {
         let cfg = URLSessionConfiguration.default

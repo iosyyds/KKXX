@@ -227,7 +227,15 @@ final class LocalStore: ObservableObject {
             save()
             syncStatus = "同步成功 · \(shortTime(lastSyncTime))"
         } catch {
-            syncStatus = "同步失败：" + error.localizedDescription
+            // 网络/链接类失败：再检测一次服务器可达性，明确提示「链接失败」
+            if SyncService.isConnectionError(error) {
+                let reachable = (try? await sync.verify(settings: settings)) ?? false
+                syncStatus = reachable
+                    ? "同步失败：" + error.localizedDescription
+                    : "同步失败：无法连接服务器（链接失败），请检查网络后重试"
+            } else {
+                syncStatus = "同步失败：" + error.localizedDescription
+            }
         }
     }
 

@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// 登录 / 注册页（多账号版）
-/// 逻辑：填写服务器地址 → 注册或登录获取令牌 → 进入主界面；
-/// 也可「仅本地使用」跳过登录（不联网同步）。
+/// 逻辑：服务器地址已内置（app.puaaa.cn）不显示给用户 → 注册或登录获取令牌 → 进入主界面；
+/// 也可「仅本地使用」跳过登录（不联网同步）。同步失败时自动检测服务器链接。
 struct AuthView: View {
     @EnvironmentObject var settings: AppSettings
     @EnvironmentObject var store: LocalStore
@@ -13,7 +13,6 @@ struct AuthView: View {
     }
 
     @State private var mode: Mode = .login
-    @State private var server = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirm = ""
@@ -37,8 +36,6 @@ struct AuthView: View {
                 .padding(.horizontal, 4)
 
                 VStack(spacing: 0) {
-                    fieldRow("服务器地址", text: $server, keyboard: .URL, placeholder: "http://app.puaaa.cn")
-                    Divider().padding(.leading, 44)
                     fieldRow("邮箱", text: $email, keyboard: .emailAddress, placeholder: "you@example.com")
                     Divider().padding(.leading, 44)
                     fieldRow("密码", text: $password, secure: true, placeholder: "至少 6 位")
@@ -80,7 +77,7 @@ struct AuthView: View {
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .disabled(busy || server.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(busy)
 
                 Button {
                     settings.skipLogin = true
@@ -101,12 +98,6 @@ struct AuthView: View {
             .padding(20)
         }
         .background(Color(uiColor: .systemGroupedBackground))
-        .onAppear {
-            server = settings.serverURL
-        }
-        .onChange(of: server) { v in
-            settings.serverURL = v.trimmingCharacters(in: .whitespaces)
-        }
     }
 
     private var logo: some View {
@@ -155,9 +146,8 @@ struct AuthView: View {
         errorMessage = nil
         let mail = email.trimmingCharacters(in: .whitespaces).lowercased()
         let pass = password
-        let srv = server.trimmingCharacters(in: .whitespaces)
 
-        guard !srv.isEmpty else { errorMessage = "请填写服务器地址"; return }
+        guard !settings.normalizedServerURL.isEmpty else { errorMessage = "服务器地址未配置，请在「云同步」设置中填写"; return }
         guard mail.contains("@") && mail.contains(".") else { errorMessage = "邮箱格式不正确"; return }
         guard pass.count >= 6 else { errorMessage = "密码至少 6 位"; return }
         if mode == .register {
@@ -179,7 +169,13 @@ struct AuthView: View {
             // 登录成功后立即拉取该账号数据
             await store.syncNow(mode: .pullOnly)
         } catch {
-            errorMessage = error.localizedDescription
+            // 失败时先检测服务器链接，区分「链接失败」与「账号/业务错误」
+            let reachable = (try? await SyncService().verify(settings: settings)) ?? false
+            if reachable {
+                errorMessage = error.localizedDescription
+            } else {
+                errorMessage = "无法连接服务器（链接失败），请检查网络后重试"
+            }
         }
     }
 }
