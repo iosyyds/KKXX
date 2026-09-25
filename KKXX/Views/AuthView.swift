@@ -18,7 +18,7 @@ struct AuthView: View {
     @State private var password = ""
     @State private var confirm = ""
     @State private var busy = false
-    @State private var error: String?
+    @State private var errorMessage: String?
 
     var body: some View {
         ScrollView {
@@ -50,7 +50,7 @@ struct AuthView: View {
                 .background(Color(uiColor: .secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                if let e = error {
+                if let e = errorMessage {
                     Text(e)
                         .font(.footnote)
                         .foregroundColor(.red)
@@ -152,16 +152,16 @@ struct AuthView: View {
     }
 
     private func submit() async {
-        error = nil
+        errorMessage = nil
         let mail = email.trimmingCharacters(in: .whitespaces).lowercased()
         let pass = password
         let srv = server.trimmingCharacters(in: .whitespaces)
 
-        guard !srv.isEmpty else { error = "请填写服务器地址"; return }
-        guard mail.contains("@") && mail.contains(".") else { error = "邮箱格式不正确"; return }
-        guard pass.count >= 6 else { error = "密码至少 6 位"; return }
+        guard !srv.isEmpty else { errorMessage = "请填写服务器地址"; return }
+        guard mail.contains("@") && mail.contains(".") else { errorMessage = "邮箱格式不正确"; return }
+        guard pass.count >= 6 else { errorMessage = "密码至少 6 位"; return }
         if mode == .register {
-            guard pass == confirm else { error = "两次输入的密码不一致"; return }
+            guard pass == confirm else { errorMessage = "两次输入的密码不一致"; return }
         }
 
         busy = true
@@ -179,7 +179,7 @@ struct AuthView: View {
             // 登录成功后立即拉取该账号数据
             await store.syncNow(mode: .pullOnly)
         } catch {
-            error = error.localizedDescription
+            errorMessage = error.localizedDescription
         }
     }
 }
