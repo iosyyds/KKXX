@@ -25,7 +25,10 @@ struct Note: Syncable {
     var tags: [String]
     var createdAt: Int64
     var updatedAt: Int64
-    var deleted: Bool
+    var deleted: Bool {
+        get { deletedFlag != 0 }
+        set { deletedFlag = newValue ? 1 : 0 }
+    }
 
     /// 以 0/1 存储 deleted，同时兼容 Int 与 Bool 解码
     private var deletedFlag: Int = 0
@@ -73,7 +76,10 @@ struct TodoItem: Syncable {
     var tags: [String]
     var createdAt: Int64
     var updatedAt: Int64
-    var deleted: Bool
+    var deleted: Bool {
+        get { deletedFlag != 0 }
+        set { deletedFlag = newValue ? 1 : 0 }
+    }
 
     private var deletedFlag: Int = 0
 
@@ -121,7 +127,10 @@ struct Bill: Syncable {
     var billDate: Int64
     var createdAt: Int64
     var updatedAt: Int64
-    var deleted: Bool
+    var deleted: Bool {
+        get { deletedFlag != 0 }
+        set { deletedFlag = newValue ? 1 : 0 }
+    }
 
     private var deletedFlag: Int = 0
 
@@ -169,7 +178,10 @@ struct Checkin: Syncable {
     var note: String
     var createdAt: Int64
     var updatedAt: Int64
-    var deleted: Bool
+    var deleted: Bool {
+        get { deletedFlag != 0 }
+        set { deletedFlag = newValue ? 1 : 0 }
+    }
 
     private var deletedFlag: Int = 0
 
