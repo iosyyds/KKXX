@@ -139,7 +139,6 @@ struct Bill: Syncable {
          updatedAt: Int64 = nowMs(),
          deleted: Bool = false) {
         self.id = id
-        self.title = title
         self.type = type
         self.amount = amount
         self.category = category
