@@ -96,6 +96,27 @@ struct AppInfoEnvelope: Codable {
     var data: AppInfoData?
 }
 
+/// /api/verify.php 专用响应结构（data 结构不同于同步接口）
+struct VerifyData: Codable {
+    var verified: Bool
+    var serverTime: Int64?
+    var syncEnabled: Bool?
+    var appVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case verified
+        case serverTime = "server_time"
+        case syncEnabled = "sync_enabled"
+        case appVersion = "app_version"
+    }
+}
+
+struct VerifyEnvelope: Codable {
+    var code: Int
+    var msg: String
+    var data: VerifyData?
+}
+
 enum SyncError: LocalizedError {
     case badURL
     case notConfigured
@@ -252,8 +273,8 @@ struct SyncService {
         }
         let (data, resp) = try await session.data(for: request(url))
         try validate(resp)
-        let envelope = try JSONDecoder().decode(ApiEnvelope.self, from: data)
-        return envelope.code == 0
+        let envelope = try JSONDecoder().decode(VerifyEnvelope.self, from: data)
+        return envelope.code == 0 && (envelope.data?.verified ?? false)
     }
 
     private func validate(_ resp: URLResponse) throws {

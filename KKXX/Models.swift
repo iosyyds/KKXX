@@ -10,6 +10,13 @@ protocol Syncable: Identifiable, Codable, Hashable {
     var deleted: Bool { get set }
 }
 
+/// 兼容服务器返回的 deleted 字段：可能是 true/false，也可能是 0/1 整数
+private func decodeDeletedFlag<C: KeyedDecodingContainerProtocol>(_ c: C, key: C.Key) -> Bool {
+    if let b = try? c.decode(Bool.self, forKey: key) { return b }
+    if let i = try? c.decode(Int.self, forKey: key) { return i != 0 }
+    return false
+}
+
 struct Note: Syncable {
     var id: String
     var title: String
@@ -19,6 +26,13 @@ struct Note: Syncable {
     var createdAt: Int64
     var updatedAt: Int64
     var deleted: Bool
+
+    /// 以 0/1 存储 deleted，同时兼容 Int 与 Bool 解码
+    private var deletedFlag: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, content, images, tags, createdAt, updatedAt, deletedFlag = "deleted"
+    }
 
     init(id: String = UUID().uuidString,
          title: String = "",
@@ -37,6 +51,18 @@ struct Note: Syncable {
         self.updatedAt = updatedAt
         self.deleted = deleted
     }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        content = try c.decodeIfPresent(String.self, forKey: .content) ?? ""
+        images = try c.decodeIfPresent([String].self, forKey: .images) ?? []
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
+        updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
+        deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
+    }
 }
 
 struct TodoItem: Syncable {
@@ -48,6 +74,12 @@ struct TodoItem: Syncable {
     var createdAt: Int64
     var updatedAt: Int64
     var deleted: Bool
+
+    private var deletedFlag: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, done, dueDate, tags, createdAt, updatedAt, deletedFlag = "deleted"
+    }
 
     init(id: String = UUID().uuidString,
          title: String = "",
@@ -66,6 +98,18 @@ struct TodoItem: Syncable {
         self.updatedAt = updatedAt
         self.deleted = deleted
     }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        done = try c.decodeIfPresent(Bool.self, forKey: .done) ?? false
+        dueDate = try c.decodeIfPresent(Int64.self, forKey: .dueDate) ?? 0
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
+        updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
+        deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
+    }
 }
 
 struct Bill: Syncable {
@@ -79,6 +123,12 @@ struct Bill: Syncable {
     var updatedAt: Int64
     var deleted: Bool
 
+    private var deletedFlag: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, amount, category, remark, billDate, createdAt, updatedAt, deletedFlag = "deleted"
+    }
+
     init(id: String = UUID().uuidString,
          type: String = "expense",
          amount: Double = 0,
@@ -89,6 +139,7 @@ struct Bill: Syncable {
          updatedAt: Int64 = nowMs(),
          deleted: Bool = false) {
         self.id = id
+        self.title = title
         self.type = type
         self.amount = amount
         self.category = category
@@ -97,6 +148,19 @@ struct Bill: Syncable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deleted = deleted
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        type = try c.decodeIfPresent(String.self, forKey: .type) ?? "expense"
+        amount = try c.decodeIfPresent(Double.self, forKey: .amount) ?? 0
+        category = try c.decodeIfPresent(String.self, forKey: .category) ?? ""
+        remark = try c.decodeIfPresent(String.self, forKey: .remark) ?? ""
+        billDate = try c.decodeIfPresent(Int64.self, forKey: .billDate) ?? nowMs()
+        createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
+        updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
+        deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
     }
 }
 
@@ -107,6 +171,12 @@ struct Checkin: Syncable {
     var createdAt: Int64
     var updatedAt: Int64
     var deleted: Bool
+
+    private var deletedFlag: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case id, date, note, createdAt, updatedAt, deletedFlag = "deleted"
+    }
 
     init(id: String = UUID().uuidString,
          date: String,
@@ -120,6 +190,16 @@ struct Checkin: Syncable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deleted = deleted
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
+        updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
+        deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
     }
 }
 
