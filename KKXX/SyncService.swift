@@ -23,7 +23,7 @@ final class NetworkMonitor: ObservableObject {
     }
 }
 
-// MARK: - 与后台 API 交互
+// MARK: - 与后台 API 交互（无需密钥，填服务器地址即可）
 
 struct ServerPayload: Codable {
     var notes: [Note] = []
@@ -57,7 +57,7 @@ enum SyncError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .badURL: return "服务器地址无效"
-        case .notConfigured: return "尚未配置服务器地址或管理员密钥"
+        case .notConfigured: return "尚未配置服务器地址"
         case .server(let code, let msg): return "服务器错误(\(code))：\(msg)"
         case .network(let m): return "网络错误：\(m)"
         }
@@ -72,9 +72,8 @@ struct SyncService {
         return URLSession(configuration: cfg)
     }()
 
-    private func request(_ url: URL, settings: AppSettings) -> URLRequest {
+    private func request(_ url: URL) -> URLRequest {
         var req = URLRequest(url: url)
-        req.setValue(settings.adminKey, forHTTPHeaderField: "X-Admin-Key")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         return req
     }
@@ -85,7 +84,7 @@ struct SyncService {
         guard !base.isEmpty, let url = URL(string: "\(base)/api/pull.php") else {
             throw SyncError.badURL
         }
-        let (data, resp) = try await session.data(for: request(url, settings: settings))
+        let (data, resp) = try await session.data(for: request(url))
         try validate(resp)
         let envelope = try JSONDecoder().decode(ApiEnvelope.self, from: data)
         guard envelope.code == 0, let payload = envelope.data else {
@@ -100,7 +99,7 @@ struct SyncService {
         guard !base.isEmpty, let url = URL(string: "\(base)/api/sync.php") else {
             throw SyncError.badURL
         }
-        var req = request(url, settings: settings)
+        var req = request(url)
         req.httpMethod = "POST"
         req.httpBody = try JSONEncoder().encode(UploadRequest(upload: upload))
         let (data, resp) = try await session.data(for: req)
@@ -112,13 +111,13 @@ struct SyncService {
         return payload
     }
 
-    /// POST /api/verify.php —— 校验密钥
+    /// GET /api/verify.php —— 检测服务器是否可连接
     func verify(settings: AppSettings) async throws -> Bool {
         let base = settings.normalizedServerURL
         guard !base.isEmpty, let url = URL(string: "\(base)/api/verify.php") else {
             throw SyncError.badURL
         }
-        let (data, resp) = try await session.data(for: request(url, settings: settings))
+        let (data, resp) = try await session.data(for: request(url))
         try validate(resp)
         let envelope = try JSONDecoder().decode(ApiEnvelope.self, from: data)
         return envelope.code == 0

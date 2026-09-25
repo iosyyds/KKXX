@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// 全局设置：服务器、密钥、同步策略、外观、安全（UserDefaults 持久化）
+/// 全局设置：服务器、同步策略、外观、安全（UserDefaults 持久化）
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
@@ -9,9 +9,6 @@ final class AppSettings: ObservableObject {
 
     @Published var serverURL: String {
         didSet { defaults.set(serverURL, forKey: "kkxx.serverURL") }
-    }
-    @Published var adminKey: String {
-        didSet { defaults.set(adminKey, forKey: "kkxx.adminKey") }
     }
     @Published var autoSyncOnWifi: Bool {
         didSet { defaults.set(autoSyncOnWifi, forKey: "kkxx.autoSyncOnWifi") }
@@ -27,8 +24,7 @@ final class AppSettings: ObservableObject {
     }
 
     private init() {
-        serverURL = defaults.string(forKey: "kkxx.serverURL") ?? "https://app.puaaa.cn"
-        adminKey = defaults.string(forKey: "kkxx.adminKey") ?? ""
+        serverURL = defaults.string(forKey: "kkxx.serverURL") ?? "http://app.puaaa.cn"
         autoSyncOnWifi = defaults.object(forKey: "kkxx.autoSyncOnWifi") as? Bool ?? true
         syncOnLaunch = defaults.object(forKey: "kkxx.syncOnLaunch") as? Bool ?? true
         fingerprintLock = defaults.object(forKey: "kkxx.fingerprintLock") as? Bool ?? false
@@ -40,7 +36,8 @@ final class AppSettings: ObservableObject {
                  .replacingOccurrences(of: "/+$", with: "", options: .regularExpression)
     }
 
+    /// 只需填写服务器地址即可使用（无需密钥）
     var isConfigured: Bool {
-        !normalizedServerURL.isEmpty && !adminKey.isEmpty
+        !normalizedServerURL.isEmpty
     }
 }

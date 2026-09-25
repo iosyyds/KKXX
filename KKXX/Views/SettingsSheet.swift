@@ -33,10 +33,12 @@ struct SettingsSheet: View {
     private var main: some View {
         NavigationStack {
             Form {
-                Section("账号") {
-                    NavigationLink("同步与设置") { SyncSettingsView() }
+                Section("云同步") {
+                    NavigationLink("云同步设置") { SyncSettingsView() }
                     LabeledContent("服务器", value: settings.normalizedServerURL.isEmpty ? "未配置" : settings.normalizedServerURL)
+                    LabeledContent("同步状态", value: store.syncStatus)
                 }
+
                 Section("外观") {
                     Picker("主题", selection: $settings.theme) {
                         Text("跟随系统").tag("system")
@@ -45,9 +47,11 @@ struct SettingsSheet: View {
                     }
                     .pickerStyle(.segmented)
                 }
+
                 Section("安全") {
                     Toggle("指纹 / 面容解锁", isOn: $settings.fingerprintLock)
                 }
+
                 Section("数据") {
                     if let url = exportURL {
                         ShareLink(item: JSONFile(url: url), preview: SharePreview("KKXX 本地数据备份")) {
@@ -55,9 +59,11 @@ struct SettingsSheet: View {
                         }
                     }
                 }
+
                 Section("关于") {
                     LabeledContent("应用", value: "KKXX")
                     LabeledContent("版本", value: "1.0.0")
+                    LabeledContent("数据存储", value: "本地缓存 + 云端同步")
                 }
             }
             .navigationTitle("设置")

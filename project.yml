@@ -37,6 +37,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSPhotoLibraryUsageDescription: 在笔记中插入图片需要使用相册权限
         ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
 
 schemes:
   KKXX:

@@ -201,7 +201,7 @@ final class LocalStore: ObservableObject {
 
     func syncNow(mode: SyncMode = .normal) async {
         guard settings.isConfigured else {
-            syncStatus = "未配置服务器/密钥"
+            syncStatus = "未配置服务器"
             return
         }
         isSyncing = true
