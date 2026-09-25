@@ -1,0 +1,99 @@
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore AppIcon
+        run: |
+          curl -sSL -o /tmp/kkxx_icon_src "https://aka.doubaocdn.com/s/DIeEMPZwFo"
+          sips -z 1024 1024 /tmp/kkxx_icon_src --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          file KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen || {
+            echo "brew install failed, trying prebuilt binary…"
+            curl -sSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/XcodeGen.zip
+            mkdir -p "$HOME/bin"
+            unzip -qo /tmp/xcodegen.zip -d "$HOME/bin"
+            echo "$HOME/bin" >> "$GITHUB_PATH"
+          }
+          xcodegen --version
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build App (unsigned)
+        id: build
+        run: |
+          set +e
+          xcodebuild \
+            -project KKXX.xcodeproj \
+            -scheme KKXX \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1
+          ec=$?
+          echo "exit_code=$ec" >> "$GITHUB_OUTPUT"
+          echo "xcodebuild exit code: $ec"
+          echo "--- last 60 lines of build log ---"
+          tail -n 60 build.log
+          exit 0
+
+      - name: Package IPA
+        if: steps.build.outputs.exit_code == '0'
+        run: |
+          mkdir -p Payload
+          cp -R "build/Build/Products/Release-iphoneos/KKXX.app" Payload/
+          zip -qry KKXX.ipa Payload
+          echo "=== IPA 信息 ==="
+          ls -lh KKXX.ipa
+          file KKXX.ipa
+
+      - name: Upload IPA Artifact
+        if: steps.build.outputs.exit_code == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: KKXX-ipa
+          path: KKXX.ipa
+          if-no-files-found: error
+
+      - name: Publish Release with IPA
+        if: steps.build.outputs.exit_code == '0'
+        run: |
+          TAG="v1.0.0-${{ github.run_number }}"
+          gh release create "$TAG" KKXX.ipa \
+            --title "KKXX $TAG" \
+            --notes "未签名 IPA（Unsigned build），由 GitHub Actions 自动构建。安装前请使用你自己的证书重新签名。"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Publish Diagnostics (build log)
+        if: steps.build.outputs.exit_code != '0'
+        run: |
+          TAG="diag-${{ github.run_number }}"
+          gh release create "$TAG" build.log \
+            --title "Build diagnostics $TAG" \
+            --notes "xcodebuild 失败日志，用于排查问题。"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Mark job failed
+        if: steps.build.outputs.exit_code != '0'
+        run: exit 1

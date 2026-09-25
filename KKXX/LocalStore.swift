@@ -1,0 +1,278 @@
+import Foundation
+import Combine
+
+/// 本地离线存储 + 待同步队列 + 双向同步引擎
+final class LocalStore: ObservableObject {
+    @Published var notes: [Note] = []
+    @Published var todos: [TodoItem] = []
+    @Published var bills: [Bill] = []
+    @Published var checkins: [Checkin] = []
+
+    @Published var lastSyncTime: Int64 = 0
+    @Published var syncStatus = "未同步"
+    @Published var isSyncing = false
+
+    private let settings = AppSettings.shared
+    private let sync = SyncService()
+
+    /// 待同步队列：记录每个实体的 id（含软删除墓碑）
+    private var dirtyNotes = Set<String>()
+    private var dirtyTodos = Set<String>()
+    private var dirtyBills = Set<String>()
+    private var dirtyCheckins = Set<String>()
+
+    private var fileURL: URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return dir.appendingPathComponent("kkxx_local.json")
+    }
+
+    init() {
+        load()
+    }
+
+    // MARK: - 持久化
+
+    private struct Snapshot: Codable {
+        var notes: [Note]
+        var todos: [TodoItem]
+        var bills: [Bill]
+        var checkins: [Checkin]
+        var lastSyncTime: Int64
+        var dirtyNotes: [String]
+        var dirtyTodos: [String]
+        var dirtyBills: [String]
+        var dirtyCheckins: [String]
+    }
+
+    private func load() {
+        guard let data = try? Data(contentsOf: fileURL),
+              let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
+        notes = snap.notes
+        todos = snap.todos
+        bills = snap.bills
+        checkins = snap.checkins
+        lastSyncTime = snap.lastSyncTime
+        dirtyNotes = Set(snap.dirtyNotes)
+        dirtyTodos = Set(snap.dirtyTodos)
+        dirtyBills = Set(snap.dirtyBills)
+        dirtyCheckins = Set(snap.dirtyCheckins)
+    }
+
+    private func save() {
+        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins,
+                            lastSyncTime: lastSyncTime,
+                            dirtyNotes: Array(dirtyNotes), dirtyTodos: Array(dirtyTodos),
+                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins))
+        if let data = try? JSONEncoder().encode(snap) {
+            try? data.write(to: fileURL, options: .atomic)
+        }
+    }
+
+    // MARK: - 通用工具
+
+    var pendingCount: Int {
+        dirtyNotes.count + dirtyTodos.count + dirtyBills.count + dirtyCheckins.count
+    }
+
+    func upsert(_ note: Note) {
+        var n = note
+        n.updatedAt = nowMs()
+        if let i = notes.firstIndex(where: { $0.id == n.id }) { notes[i] = n } else { notes.append(n) }
+        dirtyNotes.insert(n.id)
+        save(); autoSyncIfPossible()
+    }
+
+    func softDeleteNote(id: String) {
+        guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
+        notes[i].deleted = true
+        notes[i].updatedAt = nowMs()
+        dirtyNotes.insert(id)
+        save(); autoSyncIfPossible()
+    }
+
+    func upsert(_ todo: TodoItem) {
+        var t = todo; t.updatedAt = nowMs()
+        if let i = todos.firstIndex(where: { $0.id == t.id }) { todos[i] = t } else { todos.append(t) }
+        dirtyTodos.insert(t.id)
+        save(); autoSyncIfPossible()
+    }
+
+    func softDeleteTodo(id: String) {
+        guard let i = todos.firstIndex(where: { $0.id == id }) else { return }
+        todos[i].deleted = true
+        todos[i].updatedAt = nowMs()
+        dirtyTodos.insert(id)
+        save(); autoSyncIfPossible()
+    }
+
+    func upsert(_ bill: Bill) {
+        var b = bill; b.updatedAt = nowMs()
+        if let i = bills.firstIndex(where: { $0.id == b.id }) { bills[i] = b } else { bills.append(b) }
+        dirtyBills.insert(b.id)
+        save(); autoSyncIfPossible()
+    }
+
+    func softDeleteBill(id: String) {
+        guard let i = bills.firstIndex(where: { $0.id == id }) else { return }
+        bills[i].deleted = true
+        bills[i].updatedAt = nowMs()
+        dirtyBills.insert(id)
+        save(); autoSyncIfPossible()
+    }
+
+    func upsert(_ checkin: Checkin) {
+        var c = checkin; c.updatedAt = nowMs()
+        if let i = checkins.firstIndex(where: { $0.id == c.id }) { checkins[i] = c } else { checkins.append(c) }
+        dirtyCheckins.insert(c.id)
+        save(); autoSyncIfPossible()
+    }
+
+    func softDeleteCheckin(id: String) {
+        guard let i = checkins.firstIndex(where: { $0.id == id }) else { return }
+        checkins[i].deleted = true
+        checkins[i].updatedAt = nowMs()
+        dirtyCheckins.insert(id)
+        save(); autoSyncIfPossible()
+    }
+
+    // MARK: - 待同步上传载荷
+
+    private func uploadPayload(full: Bool) -> ServerPayload {
+        func pick<T: Syncable>(_ rows: [T], dirty: Set<String>) -> [T] where T: Identifiable, T.ID == String {
+            full ? rows : rows.filter { dirty.contains($0.id) }
+        }
+        return ServerPayload(notes: pick(notes, dirty: dirtyNotes),
+                             todos: pick(todos, dirty: dirtyTodos),
+                             bills: pick(bills, dirty: dirtyBills),
+                             checkins: pick(checkins, dirty: dirtyCheckins))
+    }
+
+    private func clearDirty(for payload: ServerPayload) {
+        func remove<T: Syncable>(_ rows: [T]) -> Set<String> where T: Identifiable, T.ID == String {
+            Set(rows.map(\.id))
+        }
+        dirtyNotes.subtract(remove(payload.notes))
+        dirtyTodos.subtract(remove(payload.todos))
+        dirtyBills.subtract(remove(payload.bills))
+        dirtyCheckins.subtract(remove(payload.checkins))
+    }
+
+    // MARK: - 合并服务器数据（LWW：时间戳新者胜）
+
+    private func mergeRows<T: Syncable>(_ local: [T], _ server: [T], dirty: Set<String>) -> [T]
+        where T: Identifiable, T.ID == String {
+        var map: [String: T] = [:]
+        for r in local { map[r.id] = r }
+        for s in server {
+            if let l = map[s.id] {
+                if s.updatedAt >= l.updatedAt {
+                    map[s.id] = s
+                }
+            } else {
+                map[s.id] = s
+            }
+        }
+        // 删除服务器已确认的墓碑；本地仍有待推送的删除保留
+        let kept = map.values.filter { !$0.deleted || dirty.contains($0.id) }
+        return Array(kept).sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private func applyServer(_ payload: ServerPayload) {
+        notes = mergeRows(notes, payload.notes, dirty: dirtyNotes)
+        todos = mergeRows(todos, payload.todos, dirty: dirtyTodos)
+        bills = mergeRows(bills, payload.bills, dirty: dirtyBills)
+        checkins = mergeRows(checkins, payload.checkins, dirty: dirtyCheckins)
+    }
+
+    private func purgeSyncedTombstones() {
+        notes.removeAll { $0.deleted && !dirtyNotes.contains($0.id) }
+        todos.removeAll { $0.deleted && !dirtyTodos.contains($0.id) }
+        bills.removeAll { $0.deleted && !dirtyBills.contains($0.id) }
+        checkins.removeAll { $0.deleted && !dirtyCheckins.contains($0.id) }
+    }
+
+    // MARK: - 同步入口
+
+    enum SyncMode {
+        case normal          // 先上传本地变更，再拉取合并
+        case pullOnly        // 以云端覆盖本地
+        case pushOnly        // 以本地覆盖云端
+    }
+
+    func syncNow(mode: SyncMode = .normal) async {
+        guard settings.isConfigured else {
+            syncStatus = "未配置服务器/密钥"
+            return
+        }
+        isSyncing = true
+        syncStatus = "同步中…"
+        defer { isSyncing = false }
+
+        do {
+            let payload: ServerPayload
+            switch mode {
+            case .normal:
+                payload = try await sync.sync(upload: uploadPayload(full: false), settings: settings)
+            case .pullOnly:
+                payload = try await sync.pull(settings: settings)
+                clearAllDirty()
+            case .pushOnly:
+                payload = try await sync.sync(upload: uploadPayload(full: true), settings: settings)
+            }
+
+            applyServer(payload)
+            lastSyncTime = payload.serverTime > 0 ? payload.serverTime : nowMs()
+            save()
+            purgeSyncedTombstones()
+            save()
+            syncStatus = "同步成功 · \(shortTime(lastSyncTime))"
+        } catch {
+            syncStatus = "同步失败：" + error.localizedDescription
+        }
+    }
+
+    private func clearAllDirty() {
+        dirtyNotes.removeAll()
+        dirtyTodos.removeAll()
+        dirtyBills.removeAll()
+        dirtyCheckins.removeAll()
+        save()
+    }
+
+    /// 变更后按设置自动同步（Wi-Fi 条件）
+    private func autoSyncIfPossible() {
+        guard settings.isConfigured else { return }
+        let net = NetworkMonitor.shared
+        let ok: Bool
+        if settings.autoSyncOnWifi {
+            ok = net.isWifi && net.isConnected
+        } else {
+            ok = net.isConnected
+        }
+        guard ok else { return }
+        Task { await syncNow(mode: .normal) }
+    }
+
+    /// 启动时自动拉取
+    func syncOnLaunchIfNeeded() {
+        guard settings.syncOnLaunch, settings.isConfigured else { return }
+        let net = NetworkMonitor.shared
+        let ok = settings.autoSyncOnWifi ? (net.isWifi && net.isConnected) : net.isConnected
+        guard ok else { return }
+        Task { await syncNow(mode: .normal) }
+    }
+
+    // MARK: - 导出本地数据
+
+    func exportLocalJSON() -> URL? {
+        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins,
+                            lastSyncTime: lastSyncTime,
+                            dirtyNotes: Array(dirtyNotes), dirtyTodos: Array(dirtyTodos),
+                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins))
+        guard let data = try? JSONEncoder().encode(snap) else { return nil }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("KKXX本地数据-\(Int(Date().timeIntervalSince1970)).json")
+        try? data.write(to: url, options: .atomic)
+        return url
+    }
+}
