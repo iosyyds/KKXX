@@ -43,20 +43,20 @@ private struct NoteRow: View {
             if !note.content.isEmpty {
                 Text(note.snippet)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             HStack(spacing: 6) {
                 if !note.images.isEmpty {
                     Image(systemName: "photo")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(.secondary)
                 }
                 ForEach(note.tags.prefix(4), id: \.self) { TagChip(text: $0) }
                 Spacer()
                 Text(shortTime(note.updatedAt))
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 2)

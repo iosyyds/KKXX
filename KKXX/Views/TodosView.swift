@@ -51,19 +51,19 @@ private struct TodoRow: View {
             Button(action: onToggle) {
                 Image(systemName: todo.done ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(todo.done ? Color.green : Color.secondary)
+                    .foregroundColor(todo.done ? Color.green : Color.secondary)
             }
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(todo.title)
                     .strikethrough(todo.done)
-                    .foregroundStyle(todo.done ? Color.secondary : Color.primary)
+                    .foregroundColor(todo.done ? Color.secondary : Color.primary)
                 if todo.dueDate > 0 {
                     let overdue = !todo.done && todo.dueDate < nowMs()
                     Label(shortDate(todo.dueDate), systemImage: "clock")
                         .font(.caption)
-                        .foregroundStyle(overdue ? Color.red : Color.secondary)
+                        .foregroundColor(overdue ? Color.red : Color.secondary)
                 }
                 if !todo.tags.isEmpty {
                     HStack(spacing: 4) {

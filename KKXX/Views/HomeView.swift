@@ -96,7 +96,7 @@ struct HomeView: View {
     private var searchBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
             TextField("搜索笔记、待办、账单…", text: $search)
                 .autocorrectionDisabled()
         }
@@ -112,10 +112,10 @@ struct HomeView: View {
                     VStack(spacing: 10) {
                         Image(systemName: m.symbol)
                             .font(.title2)
-                            .foregroundStyle(m.color)
+                            .foregroundColor(m.color)
                         Text(m.title)
                             .font(.subheadline)
-                            .foregroundStyle(.primary)
+                            .foregroundColor(.primary)
                     }
                     .frame(maxWidth: .infinity, minHeight: 96)
                     .background(Color(uiColor: .secondarySystemGroupedBackground))
@@ -165,7 +165,7 @@ struct HomeView: View {
             }
             if matchNotes.isEmpty && matchTodos.isEmpty && matchBills.isEmpty {
                 Text("没有匹配结果")
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
             }
         }
         .scrollContentBackground(.hidden)
@@ -197,7 +197,7 @@ struct HomeView: View {
         Button { showFabDialog = true } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundColor(.white)
                 .frame(width: 54, height: 54)
                 .background(Circle().fill(Color.accentColor))
                 .shadow(color: .black.opacity(0.18), radius: 6, y: 3)

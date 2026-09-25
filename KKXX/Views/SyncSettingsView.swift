@@ -49,7 +49,7 @@ struct SyncSettingsView: View {
                 .disabled(verifying)
 
                 if let r = verifyResult {
-                    Text(r).font(.caption).foregroundStyle(.secondary)
+                    Text(r).font(.caption).foregroundColor(.secondary)
                 }
             }
             Section("状态") {

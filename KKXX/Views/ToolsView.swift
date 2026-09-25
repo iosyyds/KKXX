@@ -24,7 +24,6 @@ struct ToolsView: View {
                 .minimumScaleFactor(0.5)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.horizontal, 24)
-                .contentTransition(.numericText())
 
             VStack(spacing: 10) {
                 ForEach(rows, id: \.self) { row in
@@ -39,16 +38,20 @@ struct ToolsView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("小工具")
+        .toolbar {
+            Text("简单计算器").font(.caption)
+        }
     }
 
     @ViewBuilder
     private func keyButton(_ key: String) -> some View {
+        let isDigit = key.first?.isNumber == true || key == "."
         Button {
             tap(key)
         } label: {
             Text(key)
                 .font(.system(size: 26, weight: .medium, design: .rounded))
-                .foregroundStyle(keyColor(key))
+                .foregroundColor(keyColor(key))
                 .frame(maxWidth: .infinity)
                 .frame(height: 64)
                 .background(buttonColor(key))

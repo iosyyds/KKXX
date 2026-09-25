@@ -10,12 +10,12 @@ struct LockView: View {
             Spacer()
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.tint)
+                .foregroundColor(.accentColor)
             Text("KKXX 已锁定")
                 .font(.title2.weight(.semibold))
             Text("使用指纹或面容解锁后继续")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
             Button {
                 authenticate()
             } label: {
@@ -28,7 +28,7 @@ struct LockView: View {
             if failed {
                 Text("解锁失败，请重试；若设备未设置生物识别，可在设置中关闭指纹锁")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }

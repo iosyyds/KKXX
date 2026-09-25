@@ -83,13 +83,13 @@ struct StatsView: View {
                             VStack(spacing: 6) {
                                 Text(item.value > 0 ? String(format: "%.0f", item.value) : "")
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(.secondary)
                                 Capsule()
                                     .fill(Color.red.opacity(0.65))
                                     .frame(height: max(4, CGFloat(item.value / maxV) * 90))
                                 Text(item.label)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(.secondary)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -125,14 +125,14 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: symbol)
                 .font(.title3)
-                .foregroundStyle(color)
+                .foregroundColor(color)
             Text(value)
                 .font(.title3.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)

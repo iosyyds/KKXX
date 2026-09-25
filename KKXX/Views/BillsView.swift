@@ -97,10 +97,10 @@ private struct StatCell: View {
     let color: Color
     var body: some View {
         VStack(spacing: 4) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(label).font(.caption).foregroundColor(.secondary)
             Text(value)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
+                .foregroundColor(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         }
@@ -114,21 +114,21 @@ private struct BillRow: View {
         HStack(spacing: 12) {
             Image(systemName: bill.type == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                 .font(.title2)
-                .foregroundStyle(bill.type == "income" ? Color.green : Color.orange)
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
             VStack(alignment: .leading, spacing: 3) {
                 Text(bill.category.isEmpty ? (bill.remark.isEmpty ? "未分类" : bill.remark) : bill.category)
                     .font(.subheadline)
                 Text(bill.remark.isEmpty ? shortDate(bill.billDate) : bill.remark)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             Spacer()
             Text(bill.type == "income" ? "+" : "-")
-                .foregroundStyle(bill.type == "income" ? Color.green : Color.orange)
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
             + Text(yuan(bill.amount))
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(bill.type == "income" ? Color.green : Color.orange)
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
         }
         .padding(.vertical, 2)
     }

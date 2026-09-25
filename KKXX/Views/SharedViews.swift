@@ -10,11 +10,11 @@ struct EmptyHint: View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 44))
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
             Text(title).font(.headline)
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 60)

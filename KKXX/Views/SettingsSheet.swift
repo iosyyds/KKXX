@@ -21,6 +21,16 @@ struct SettingsSheet: View {
     @State private var exportURL: URL?
 
     var body: some View {
+        Group {
+            if #available(iOS 16.4, *) {
+                main.presentationDetents([.medium, .large])
+            } else {
+                main
+            }
+        }
+    }
+
+    private var main: some View {
         NavigationStack {
             Form {
                 Section("账号") {
@@ -59,7 +69,6 @@ struct SettingsSheet: View {
             }
             .onAppear { exportURL = store.exportLocalJSON() }
         }
-        .presentationDetents([.medium, .large])
     }
 }
 

@@ -46,13 +46,6 @@ struct CheckinView: View {
         return f.string(from: d)
     }
 
-    private var monthPrefix: String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_CN")
-        f.dateFormat = "yyyy-MM"
-        return f.string(from: month)
-    }
-
     private func toggle(_ dateStr: String) {
         if let existing = store.checkins.first(where: { !$0.deleted && $0.date == dateStr }) {
             store.softDeleteCheckin(id: existing.id)
@@ -83,7 +76,7 @@ struct CheckinView: View {
                     let days = ["一", "二", "三", "四", "五", "六", "日"]
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
                         ForEach(days, id: \.self) { d in
-                            Text(d).font(.caption).foregroundStyle(.secondary)
+                            Text(d).font(.caption).foregroundColor(.secondary)
                         }
                         ForEach(0..<leadingBlanks, id: \.self) { _ in
                             Color.clear.frame(height: 40)
@@ -107,10 +100,17 @@ struct CheckinView: View {
         }
     }
 
+    private var monthPrefix: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = "yyyy-MM"
+        return f.string(from: month)
+    }
+
     private func statCard(_ label: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 4) {
-            Text(value).font(.headline).foregroundStyle(color)
-            Text(label).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.headline).foregroundColor(color)
+            Text(label).font(.caption).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -142,10 +142,10 @@ struct CheckinView: View {
             VStack(spacing: 3) {
                 Text("\(day)")
                     .font(.subheadline.weight(isToday ? .bold : .regular))
-                    .foregroundStyle(isToday ? Color.accentColor : Color.primary)
+                    .foregroundColor(isToday ? Color.accentColor : Color.primary)
                 Image(systemName: checked ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 14))
-                    .foregroundStyle(checked ? Color.green : Color(.systemGray4))
+                    .foregroundColor(checked ? Color.green : Color(.systemGray4))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 46)
