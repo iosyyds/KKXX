@@ -52,6 +52,10 @@ struct HomeView: View {
     @State private var showFabDialog = false
     @State private var newItem: NewItemType?
 
+    @State private var announcement: AppAnnouncement?
+    @State private var remoteVersion: String?
+    @State private var updateNote = ""
+
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
     private var todayLine: String {
@@ -95,7 +99,49 @@ struct HomeView: View {
                 Button("记一笔") { newItem = .bill }
                 Button("取消", role: .cancel) {}
             }
-            .task { store.syncOnLaunchIfNeeded() }
+            .alert(
+                announcement?.title ?? "公告",
+                isPresented: Binding(
+                    get: { announcement != nil },
+                    set: { if !$0 { announcement = nil } }
+                )
+            ) {
+                Button("知道了", role: .cancel) { announcement = nil }
+            } message: {
+                Text(announcement?.content ?? "")
+            }
+            .alert(
+                "发现新版本 v\(remoteVersion ?? "")",
+                isPresented: Binding(
+                    get: { remoteVersion != nil },
+                    set: { if !$0 { remoteVersion = nil } }
+                )
+            ) {
+                Button("知道了") { remoteVersion = nil }
+            } message: {
+                Text(updateNote.isEmpty ? "请前往服务器下载新包安装。" : updateNote)
+            }
+            .task {
+                store.syncOnLaunchIfNeeded()
+                await checkAppInfo()
+            }
+        }
+    }
+
+    /// 启动时拉取应用信息：公告弹窗 + 版本更新提示
+    private func checkAppInfo() async {
+        guard settings.isReady else { return }
+        do {
+            guard let info = try await SyncService().appInfo(settings: settings) else { return }
+            if info.announcement.enabled && !info.announcement.title.isEmpty {
+                announcement = info.announcement
+            }
+            if info.appVersion != "1.1.0" {
+                remoteVersion = info.appVersion
+                updateNote = info.updateNote
+            }
+        } catch {
+            // 静默：拉取失败不打扰用户
         }
     }
 

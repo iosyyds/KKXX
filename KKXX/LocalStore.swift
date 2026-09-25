@@ -200,8 +200,8 @@ final class LocalStore: ObservableObject {
     }
 
     func syncNow(mode: SyncMode = .normal) async {
-        guard settings.isConfigured else {
-            syncStatus = "未配置服务器"
+        guard settings.isReady else {
+            syncStatus = settings.isLoggedIn ? "未配置服务器" : "未登录，请先登录"
             return
         }
         isSyncing = true
@@ -241,7 +241,7 @@ final class LocalStore: ObservableObject {
 
     /// 变更后按设置自动同步（Wi-Fi 条件）
     private func autoSyncIfPossible() {
-        guard settings.isConfigured else { return }
+        guard settings.isReady else { return }
         let net = NetworkMonitor.shared
         let ok: Bool
         if settings.autoSyncOnWifi {
@@ -255,11 +255,27 @@ final class LocalStore: ObservableObject {
 
     /// 启动时自动拉取
     func syncOnLaunchIfNeeded() {
-        guard settings.syncOnLaunch, settings.isConfigured else { return }
+        guard settings.syncOnLaunch, settings.isReady else { return }
         let net = NetworkMonitor.shared
         let ok = settings.autoSyncOnWifi ? (net.isWifi && net.isConnected) : net.isConnected
         guard ok else { return }
         Task { await syncNow(mode: .normal) }
+    }
+
+    /// 退出登录：清除账号、本地缓存与待同步队列
+    func logout() {
+        settings.clearAccount()
+        notes.removeAll()
+        todos.removeAll()
+        bills.removeAll()
+        checkins.removeAll()
+        dirtyNotes.removeAll()
+        dirtyTodos.removeAll()
+        dirtyBills.removeAll()
+        dirtyCheckins.removeAll()
+        lastSyncTime = 0
+        syncStatus = "未登录"
+        save()
     }
 
     // MARK: - 导出本地数据

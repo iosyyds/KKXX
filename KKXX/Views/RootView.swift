@@ -7,8 +7,10 @@ struct RootView: View {
     var body: some View {
         if settings.fingerprintLock && !unlocked {
             LockView(unlocked: $unlocked)
-        } else {
+        } else if settings.canEnter {
             HomeView()
+        } else {
+            AuthView()
         }
     }
 }

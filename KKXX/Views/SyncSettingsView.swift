@@ -21,7 +21,7 @@ struct SyncSettingsView: View {
             } header: {
                 Text("服务器")
             } footer: {
-                Text("填写你部署后台的网址，App 会自动把数据同步到该服务器，无需任何密钥。")
+                Text("填写你部署后台的网址。登录后数据会同步到该服务器（每人数据相互隔离）。")
             }
 
             Section("同步策略") {
@@ -35,17 +35,17 @@ struct SyncSettingsView: View {
                 } label: {
                     Label(store.isSyncing ? "同步中…" : "立即同步", systemImage: "arrow.triangle.2.circlepath")
                 }
-                .disabled(store.isSyncing || !settings.isConfigured)
+                .disabled(store.isSyncing || !settings.isReady)
 
                 Button("以云端覆盖本地") {
                     Task { await store.syncNow(mode: .pullOnly) }
                 }
-                .disabled(store.isSyncing || !settings.isConfigured)
+                .disabled(store.isSyncing || !settings.isReady)
 
                 Button("以本地覆盖云端") {
                     Task { await store.syncNow(mode: .pushOnly) }
                 }
-                .disabled(store.isSyncing || !settings.isConfigured)
+                .disabled(store.isSyncing || !settings.isReady)
             }
 
             Section("状态") {
@@ -59,7 +59,7 @@ struct SyncSettingsView: View {
                 } label: {
                     Label(checking ? "检测中…" : "检测服务器连接", systemImage: "bolt.horizontal.circle")
                 }
-                .disabled(checking || !settings.isConfigured)
+                .disabled(checking || !settings.isReady)
 
                 if let r = checkResult {
                     Text(r)

@@ -19,6 +19,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var exportURL: URL?
+    @State private var confirmLogout = false
 
     var body: some View {
         Group {
@@ -33,6 +34,18 @@ struct SettingsSheet: View {
     private var main: some View {
         NavigationStack {
             Form {
+                Section("账号") {
+                    if settings.isLoggedIn {
+                        LabeledContent("登录账号", value: settings.userEmail.isEmpty ? "-" : settings.userEmail)
+                        Button("退出登录", role: .destructive) { confirmLogout = true }
+                    } else if settings.skipLogin {
+                        LabeledContent("当前状态", value: "仅本地使用（未登录）")
+                        NavigationLink("登录 / 注册账号") { AuthView() }
+                    } else {
+                        NavigationLink("登录 / 注册账号") { AuthView() }
+                    }
+                }
+
                 Section("云同步") {
                     NavigationLink("云同步设置") { SyncSettingsView() }
                     LabeledContent("服务器", value: settings.normalizedServerURL.isEmpty ? "未配置" : settings.normalizedServerURL)
@@ -62,8 +75,8 @@ struct SettingsSheet: View {
 
                 Section("关于") {
                     LabeledContent("应用", value: "KKXX")
-                    LabeledContent("版本", value: "1.0.0")
-                    LabeledContent("数据存储", value: "本地缓存 + 云端同步")
+                    LabeledContent("版本", value: "1.1.0")
+                    LabeledContent("数据存储", value: "本地缓存 + 账号云同步")
                 }
             }
             .navigationTitle("设置")
@@ -72,6 +85,10 @@ struct SettingsSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { dismiss() }
                 }
+            }
+            .confirmationDialog("退出登录？", isPresented: $confirmLogout, titleVisibility: .visible) {
+                Button("退出登录并清除本地数据", role: .destructive) { store.logout() }
+                Button("取消", role: .cancel) {}
             }
             .onAppear { exportURL = store.exportLocalJSON() }
         }
