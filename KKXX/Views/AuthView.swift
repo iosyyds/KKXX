@@ -23,7 +23,7 @@ struct AuthView: View {
         ScrollView {
             VStack(spacing: 18) {
                 logo
-                Text("KKXX 个人云 · 多设备同步")
+                Text("KKXX · 多设备同步")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
@@ -111,7 +111,7 @@ struct AuthView: View {
                 )
                 .frame(width: 84, height: 84)
                 .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.35), radius: 10, x: 0, y: 5)
-            Text("KK")
+            Text("KX")
                 .font(.system(size: 34, weight: .bold))
                 .foregroundColor(.white)
         }
