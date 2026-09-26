@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 登录 / 注册页（多账号版）
 /// 逻辑：服务器地址已内置（app.puaaa.cn）不显示给用户 → 注册或登录获取令牌 → 进入主界面；
-/// 也可「仅本地使用」跳过登录（不联网同步）。同步失败时自动检测服务器链接。
+/// 也可「暂不登录」跳过（数据仅存本机，登录后以云端为准）。同步失败时自动检测服务器链接。
 struct AuthView: View {
     @EnvironmentObject var settings: AppSettings
     @EnvironmentObject var store: LocalStore
@@ -82,15 +82,15 @@ struct AuthView: View {
                 Button {
                     settings.skipLogin = true
                 } label: {
-                    Text("跳过登录，仅本地使用")
+                    Text("暂不登录")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                         .padding(.vertical, 6)
                 }
 
                 Text(mode == .login
-                     ? "没有账号？切换到「注册」创建，第一个注册的账号会自动接管旧数据。"
-                     : "注册后数据自动备份到云端，不同账号数据相互隔离。")
+                     ? "没有账号？切换到「注册」创建一个，登录后数据自动同步。"
+                     : "数据保存在云端，登录后多设备自动同步，不同账号数据相互隔离。")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

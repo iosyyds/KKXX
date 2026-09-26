@@ -314,19 +314,4 @@ final class LocalStore: ObservableObject {
         syncStatus = "未登录"
         save()
     }
-
-    // MARK: - 导出本地数据
-
-    func exportLocalJSON() -> URL? {
-        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins, medboxes: medboxes,
-                            lastSyncTime: lastSyncTime,
-                            dirtyNotes: Array(dirtyNotes), dirtyTodos: Array(dirtyTodos),
-                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins),
-                            dirtyMedboxes: Array(dirtyMedboxes))
-        guard let data = try? JSONEncoder().encode(snap) else { return nil }
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("KKXX本地数据-\(Int(Date().timeIntervalSince1970)).json")
-        try? data.write(to: url, options: .atomic)
-        return url
-    }
 }
