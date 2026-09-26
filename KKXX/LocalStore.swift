@@ -39,13 +39,13 @@ final class LocalStore: ObservableObject {
         var todos: [TodoItem]
         var bills: [Bill]
         var checkins: [Checkin]
-        var medboxes: [MedBoxItem]
+        var medboxes: [MedBoxItem]?
         var lastSyncTime: Int64
         var dirtyNotes: [String]
         var dirtyTodos: [String]
         var dirtyBills: [String]
         var dirtyCheckins: [String]
-        var dirtyMedboxes: [String]
+        var dirtyMedboxes: [String]?
     }
 
     private func load() {
@@ -55,13 +55,13 @@ final class LocalStore: ObservableObject {
         todos = snap.todos
         bills = snap.bills
         checkins = snap.checkins
-        medboxes = snap.medboxes
+        medboxes = snap.medboxes ?? []
         lastSyncTime = snap.lastSyncTime
         dirtyNotes = Set(snap.dirtyNotes)
         dirtyTodos = Set(snap.dirtyTodos)
         dirtyBills = Set(snap.dirtyBills)
         dirtyCheckins = Set(snap.dirtyCheckins)
-        dirtyMedboxes = Set(snap.dirtyMedboxes)
+        dirtyMedboxes = Set(snap.dirtyMedboxes ?? [])
     }
 
     private func save() {
