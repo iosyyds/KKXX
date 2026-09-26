@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 小工具：简单四则计算器
+/// 小工具：简单四则计算器（iOS 计算器风格）
 struct ToolsView: View {
     @State private var display = "0"
     @State private var accumulator: Double?
@@ -16,14 +16,14 @@ struct ToolsView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 12) {
-            Spacer(minLength: 20)
+        VStack(spacing: 14) {
+            Spacer(minLength: 16)
             Text(display)
-                .font(.system(size: 56, weight: .light, design: .rounded))
+                .font(.system(size: 52, weight: .light, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 26)
 
             VStack(spacing: 10) {
                 ForEach(rows, id: \.self) { row in
@@ -45,17 +45,17 @@ struct ToolsView: View {
 
     @ViewBuilder
     private func keyButton(_ key: String) -> some View {
-        let isDigit = key.first?.isNumber == true || key == "."
         Button {
             tap(key)
         } label: {
             Text(key)
-                .font(.system(size: 26, weight: .medium, design: .rounded))
+                .font(.system(size: 24, weight: .medium, design: .rounded))
                 .foregroundColor(keyColor(key))
                 .frame(maxWidth: .infinity)
                 .frame(height: 64)
                 .background(buttonColor(key))
                 .clipShape(Circle())
+                .shadow(color: buttonColor(key) == Color(.systemGray5) ? Color.black.opacity(0.05) : .clear, radius: 2, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -71,7 +71,8 @@ struct ToolsView: View {
 
     private func buttonColor(_ key: String) -> Color {
         switch key {
-        case "=": return .orange
+        case "=":
+            return brandGreen
         case "÷", "×", "−", "+", "%", "C": return Color(.systemGray5)
         default: return Color(.secondarySystemGroupedBackground)
         }

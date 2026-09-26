@@ -34,6 +34,17 @@ struct NoteEditorView: View {
                                         .scaledToFill()
                                         .frame(width: 84, height: 84)
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .overlay(alignment: .topTrailing) {
+                                            Button {
+                                                note.images.removeAll { $0 == uri }
+                                            } label: {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(.white)
+                                                    .background(Circle().fill(Color.black.opacity(0.55)))
+                                            }
+                                            .padding(3)
+                                        }
                                 }
                             }
                         }

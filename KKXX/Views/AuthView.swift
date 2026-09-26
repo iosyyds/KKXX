@@ -102,20 +102,20 @@ struct AuthView: View {
 
     private var logo: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: 22)
                 .fill(
                     LinearGradient(
                         colors: [Color(red: 0.16, green: 0.85, blue: 0.48), Color(red: 0.03, green: 0.65, blue: 0.35)],
                         startPoint: .top, endPoint: .bottom
                     )
                 )
-                .frame(width: 84, height: 84)
-                .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.35), radius: 10, x: 0, y: 5)
+                .frame(width: 92, height: 92)
+                .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.35), radius: 12, x: 0, y: 6)
             Text("KX")
-                .font(.system(size: 34, weight: .bold))
+                .font(.system(size: 38, weight: .bold))
                 .foregroundColor(.white)
         }
-        .padding(.top, 28)
+        .padding(.top, 32)
     }
 
     private func fieldRow(_ label: String, text: Binding<String>, secure: Bool = false,

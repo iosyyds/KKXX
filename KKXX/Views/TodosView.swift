@@ -14,7 +14,7 @@ struct TodosView: View {
     var body: some View {
         Group {
             if visible.isEmpty {
-                EmptyHint(icon: "checklist", title: "暂无待办", subtitle: "点右上角新增，或从首页 + 新建")
+                EmptyHint(icon: "checklist", title: "暂无待办", subtitle: "点右上角新增，或从首页 + 新建", color: .orange)
             } else {
                 List {
                     ForEach(visible) { todo in
@@ -32,6 +32,7 @@ struct TodosView: View {
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("待办")
@@ -50,13 +51,14 @@ private struct TodoRow: View {
         HStack(spacing: 12) {
             Button(action: onToggle) {
                 Image(systemName: todo.done ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundColor(todo.done ? Color.green : Color.secondary)
+                    .font(.system(size: 26))
+                    .foregroundColor(todo.done ? brandGreen : Color(.systemGray3))
             }
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(todo.title)
+                    .font(.subheadline.weight(.medium))
                     .strikethrough(todo.done)
                     .foregroundColor(todo.done ? Color.secondary : Color.primary)
                 if todo.dueDate > 0 {
@@ -72,7 +74,7 @@ private struct TodoRow: View {
                 }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 

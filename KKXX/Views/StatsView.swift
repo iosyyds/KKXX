@@ -62,21 +62,27 @@ struct StatsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 14) {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     card("笔记", "\(visibleNotes.count)", .blue, "note.text")
                     card("待办", "\(visibleTodos.filter { $0.done }.count)/\(visibleTodos.count)", .orange, "checklist")
-                    card("本月收入", yuan(monthIncome), .green, "arrow.down.circle")
-                    card("本月支出", yuan(monthExpense), .red, "arrow.up.circle")
-                    card("打卡连续", "\(streak) 天", .purple, "flame")
+                    card("本月收入", yuan(monthIncome), .green, "arrow.down.circle.fill")
+                    card("本月支出", yuan(monthExpense), .red, "arrow.up.circle.fill")
+                    card("打卡连续", "\(streak) 天", .purple, "flame.fill")
                     card("打卡累计", "\(visibleCheckins.count) 次", .teal, "calendar")
                 }
                 .padding(.horizontal)
 
                 // 近 6 月支出柱状图
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("近 6 月支出")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Text("近 6 月支出")
+                            .font(.headline)
+                        Spacer()
+                        Text("单位：元")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                     let maxV = max(monthSeries.map(\.value).max() ?? 1, 1)
                     HStack(alignment: .bottom, spacing: 10) {
                         ForEach(Array(monthSeries.enumerated()), id: \.offset) { _, item in
@@ -85,8 +91,13 @@ struct StatsView: View {
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                                 Capsule()
-                                    .fill(Color.red.opacity(0.65))
-                                    .frame(height: max(4, CGFloat(item.value / maxV) * 90))
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.orange.opacity(0.85), Color.red.opacity(0.55)],
+                                            startPoint: .bottom, endPoint: .top
+                                        )
+                                    )
+                                    .frame(height: max(4, CGFloat(item.value / maxV) * 88))
                                 Text(item.label)
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
@@ -94,12 +105,27 @@ struct StatsView: View {
                             .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(height: 130)
+                    .frame(height: 128)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color(uiColor: .secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .padding(.horizontal)
+
+                // 收支小结
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("本月收支")
+                        .font(.headline)
+                    HStack(spacing: 12) {
+                        miniStat("收入", yuan(monthIncome), .green)
+                        miniStat("支出", yuan(monthExpense), .orange)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
                 .padding(.horizontal)
             }
             .padding(.vertical)
@@ -110,9 +136,7 @@ struct StatsView: View {
 
     private func card(_ label: String, _ value: String, _ color: Color, _ symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundColor(color)
+            IconBadge(symbol: symbol, color: color, size: 38, corner: 11)
             Text(value)
                 .font(.title3.weight(.semibold))
                 .lineLimit(1)
@@ -124,7 +148,24 @@ struct StatsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func miniStat(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.headline)
+                .foregroundColor(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

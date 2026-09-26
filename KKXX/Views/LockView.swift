@@ -10,7 +10,7 @@ struct LockView: View {
             Spacer()
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 64))
-                .foregroundColor(.accentColor)
+                .foregroundColor(brandGreen)
             Text("KKXX 已锁定")
                 .font(.title2.weight(.semibold))
             Text("使用指纹或面容解锁后继续")

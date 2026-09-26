@@ -58,28 +58,45 @@ struct CheckinView: View {
         ScrollView {
             VStack(spacing: 16) {
                 // 统计
-                HStack {
-                    statCard("连续", "\(streak) 天", .orange)
-                    statCard("本月", "\(checkedDates.filter { $0.hasPrefix(monthPrefix) }.count) 次", .green)
-                    statCard("累计", "\(checkedDates.count) 次", .blue)
+                HStack(spacing: 12) {
+                    statCard("连续", "\(streak) 天", .orange, "flame.fill")
+                    statCard("本月", "\(checkedDates.filter { $0.hasPrefix(monthPrefix) }.count) 次", .green, "calendar.badge.checkmark")
+                    statCard("累计", "\(checkedDates.count) 次", .blue, "rosette")
                 }
+                .padding(.horizontal)
 
                 // 日历卡片
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     HStack {
-                        Button { prev() } label: { Image(systemName: "chevron.left") }
-                        Text(monthLabel).font(.headline).frame(maxWidth: .infinity)
-                        Button { next() } label: { Image(systemName: "chevron.right") }
+                        Button { prev() } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 34, height: 34)
+                                .background(Color(uiColor: .systemGroupedBackground))
+                                .clipShape(Circle())
+                        }
+                        Text(monthLabel)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                        Button { next() } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 34, height: 34)
+                                .background(Color(uiColor: .systemGroupedBackground))
+                                .clipShape(Circle())
+                        }
                     }
                     .padding(.horizontal, 8)
 
                     let days = ["一", "二", "三", "四", "五", "六", "日"]
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
                         ForEach(days, id: \.self) { d in
-                            Text(d).font(.caption).foregroundColor(.secondary)
+                            Text(d)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                         }
                         ForEach(0..<leadingBlanks, id: \.self) { _ in
-                            Color.clear.frame(height: 40)
+                            Color.clear.frame(height: 44)
                         }
                         ForEach(dayNumbers, id: \.self) { day in
                             dayCell(day)
@@ -88,7 +105,7 @@ struct CheckinView: View {
                 }
                 .padding()
                 .background(Color(uiColor: .secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
                 .padding(.horizontal)
             }
             .padding(.vertical)
@@ -107,16 +124,20 @@ struct CheckinView: View {
         return f.string(from: month)
     }
 
-    private func statCard(_ label: String, _ value: String, _ color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value).font(.headline).foregroundColor(color)
-            Text(label).font(.caption).foregroundColor(.secondary)
+    private func statCard(_ label: String, _ value: String, _ color: Color, _ symbol: String) -> some View {
+        VStack(spacing: 6) {
+            IconBadge(symbol: symbol, color: color, size: 32, corner: 10)
+            Text(value)
+                .font(.headline)
+                .foregroundColor(.primary)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal, 4)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var leadingBlanks: Int {
@@ -139,18 +160,25 @@ struct CheckinView: View {
         return Button {
             toggle(dateStr)
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 2) {
                 Text("\(day)")
                     .font(.subheadline.weight(isToday ? .bold : .regular))
                     .foregroundColor(isToday ? Color.accentColor : Color.primary)
-                Image(systemName: checked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 14))
-                    .foregroundColor(checked ? Color.green : Color(.systemGray4))
+                ZStack {
+                    Circle()
+                        .fill(checked ? brandGreen : Color(.systemGray5).opacity(0.5))
+                        .frame(width: 22, height: 22)
+                    if checked {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 46)
-            .background(isToday ? Color.accentColor.opacity(0.12) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(isToday ? Color.accentColor.opacity(0.10) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
     }

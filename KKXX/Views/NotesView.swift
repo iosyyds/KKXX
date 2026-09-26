@@ -11,7 +11,7 @@ struct NotesView: View {
     var body: some View {
         Group {
             if visible.isEmpty {
-                EmptyHint(icon: "note.text", title: "暂无笔记", subtitle: "点右上角新建")
+                EmptyHint(icon: "note.text", title: "暂无笔记", subtitle: "点右上角新建，随手记录灵感", color: .blue)
             } else {
                 List {
                     ForEach(visible) { note in
@@ -24,6 +24,7 @@ struct NotesView: View {
                             }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("笔记")
@@ -37,29 +38,33 @@ struct NotesView: View {
 private struct NoteRow: View {
     let note: Note
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(note.title.isEmpty ? "（无标题）" : note.title)
-                .font(.headline)
-            if !note.content.isEmpty {
-                Text(note.snippet)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            HStack(spacing: 6) {
-                if !note.images.isEmpty {
-                    Image(systemName: "photo")
+        HStack(alignment: .top, spacing: 14) {
+            IconBadge(symbol: "note.text", color: .blue, size: 44, corner: 12)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(note.title.isEmpty ? "（无标题）" : note.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
+                if !note.content.isEmpty {
+                    Text(note.snippet)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                HStack(spacing: 6) {
+                    if !note.images.isEmpty {
+                        Image(systemName: "photo")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    ForEach(note.tags.prefix(4), id: \.self) { TagChip(text: $0) }
+                    Spacer(minLength: 4)
+                    Text(shortTime(note.updatedAt))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                ForEach(note.tags.prefix(4), id: \.self) { TagChip(text: $0) }
-                Spacer()
-                Text(shortTime(note.updatedAt))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 

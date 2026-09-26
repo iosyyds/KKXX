@@ -24,16 +24,16 @@ struct BillsView: View {
     var body: some View {
         Group {
             if store.bills.filter({ !$0.deleted }).isEmpty {
-                EmptyHint(icon: "yensign.circle", title: "还没有账单", subtitle: "点右上角记一笔")
+                EmptyHint(icon: "yensign.circle", title: "还没有账单", subtitle: "点右上角或首页 + 记一笔", color: brandGreen)
             } else {
                 List {
                     Section {
-                        HStack {
-                            StatCell(label: "收入", value: yuan(income), color: .green)
-                            StatCell(label: "支出", value: yuan(expense), color: .red)
-                            StatCell(label: "结余", value: yuan(income - expense), color: .primary)
+                        HStack(spacing: 12) {
+                            StatCell(label: "收入", value: yuan(income), color: .green, symbol: "arrow.down.circle.fill")
+                            StatCell(label: "支出", value: yuan(expense), color: .orange, symbol: "arrow.up.circle.fill")
+                            StatCell(label: "结余", value: yuan(income - expense), color: .primary, symbol: "equal.circle.fill")
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 2)
                     }
                     .listRowBackground(Color.clear)
 
@@ -49,6 +49,7 @@ struct BillsView: View {
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("记账")
@@ -63,11 +64,23 @@ struct BillsView: View {
                 .padding(.horizontal)
 
                 HStack {
-                    Button { prevMonth() } label: { Image(systemName: "chevron.left") }
+                    Button { prevMonth() } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 34, height: 34)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .clipShape(Circle())
+                    }
                     Text(monthLabel)
-                        .font(.subheadline.weight(.medium))
+                        .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
-                    Button { nextMonth() } label: { Image(systemName: "chevron.right") }
+                    Button { nextMonth() } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 34, height: 34)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .clipShape(Circle())
+                    }
                 }
                 .padding(.horizontal)
             }
@@ -95,42 +108,52 @@ private struct StatCell: View {
     let label: String
     let value: String
     let color: Color
+    let symbol: String
+
     var body: some View {
-        VStack(spacing: 4) {
-            Text(label).font(.caption).foregroundColor(.secondary)
+        VStack(spacing: 6) {
+            IconBadge(symbol: symbol, color: color, size: 30, corner: 9)
             Text(value)
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 
 private struct BillRow: View {
     let bill: Bill
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: bill.type == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                .font(.title2)
-                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
+        HStack(spacing: 14) {
+            IconBadge(
+                symbol: bill.type == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
+                color: bill.type == "income" ? .green : .orange,
+                size: 42, corner: 12
+            )
             VStack(alignment: .leading, spacing: 3) {
                 Text(bill.category.isEmpty ? (bill.remark.isEmpty ? "未分类" : bill.remark) : bill.category)
-                    .font(.subheadline)
+                    .font(.subheadline.weight(.medium))
                 Text(bill.remark.isEmpty ? shortDate(bill.billDate) : bill.remark)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             Spacer()
-            Text(bill.type == "income" ? "+" : "-")
+            (Text(bill.type == "income" ? "+" : "-")
                 .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
-            + Text(yuan(bill.amount))
+             + Text(yuan(bill.amount))
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange))
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 

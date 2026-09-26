@@ -137,24 +137,15 @@ struct HomeView: View {
         }
     }
 
-    /// 首页宫格：苹果原生卡片风格
+    /// 首页宫格：苹果原生卡片风格（精致版）
     private var moduleGrid: some View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(Module.allCases, id: \.self) { m in
                     NavigationLink(value: m) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 11)
-                                    .fill(m.color.opacity(0.14))
-                                Image(systemName: m.symbol)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(m.color)
-                            }
-                            .frame(width: 38, height: 38)
-
+                        VStack(alignment: .leading, spacing: 10) {
+                            IconBadge(symbol: m.symbol, color: m.color, size: 44, corner: 13)
                             Spacer(minLength: 0)
-
                             Text(m.title)
                                 .font(.headline)
                                 .foregroundColor(.primary)
@@ -163,10 +154,10 @@ struct HomeView: View {
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, minHeight: 128, alignment: .leading)
                         .background(Color(uiColor: .secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
                     }
                     .buttonStyle(.plain)
                 }
@@ -290,16 +281,16 @@ struct NewMenuSheet: View {
         VStack(spacing: 0) {
             Text("新建")
                 .font(.headline)
-                .padding(.top, 20)
-                .padding(.bottom, 4)
+                .padding(.top, 22)
+                .padding(.bottom, 6)
             menuRow("note.text", "新建笔记", .blue) { onPick(.note) }
-            Divider().padding(.leading, 60)
+            Divider().padding(.leading, 72)
             menuRow("checklist", "新建待办", .orange) { onPick(.todo) }
-            Divider().padding(.leading, 60)
+            Divider().padding(.leading, 72)
             menuRow("yensign.circle", "记一笔", .green) { onPick(.bill) }
             Spacer(minLength: 0)
         }
-        .presentationDetents([.height(230)])
+        .presentationDetents([.height(250)])
         .presentationDragIndicator(.visible)
     }
 
@@ -309,17 +300,17 @@ struct NewMenuSheet: View {
             action()
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: symbol)
-                    .font(.title3)
-                    .foregroundColor(color)
-                    .frame(width: 32)
+                IconBadge(symbol: symbol, color: color, size: 40, corner: 11)
                 Text(title)
                     .font(.body)
                     .foregroundColor(.primary)
                 Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(Color(.systemGray3))
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
