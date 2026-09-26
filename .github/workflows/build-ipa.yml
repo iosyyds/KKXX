@@ -17,7 +17,7 @@ jobs:
 
       - name: Restore AppIcon
         run: |
-          curl -sSL -o /tmp/kkxx_icon_src "https://aka.doubaocdn.com/s/CYoxKM7bxU"
+          curl -sSL -o /tmp/kkxx_icon_src "https://aka.doubaocdn.com/s/05odxOxcF2"
           sips -z 1024 1024 /tmp/kkxx_icon_src --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           file KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
