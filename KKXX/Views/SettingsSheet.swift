@@ -6,6 +6,7 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var confirmLogout = false
+    @State private var exiting = false
 
     var body: some View {
         Group {
@@ -33,8 +34,17 @@ struct SettingsSheet: View {
                         }
                         Spacer()
                         if settings.isLoggedIn {
-                            Button("退出", role: .destructive) { confirmLogout = true }
+                            if exiting {
+                                HStack(spacing: 6) {
+                                    ProgressView().controlSize(.small)
+                                    Text("同步中…")
+                                }
                                 .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            } else {
+                                Button("退出", role: .destructive) { startLogout() }
+                                    .font(.subheadline)
+                            }
                         } else {
                             NavigationLink("登录 / 注册") { AuthView() }
                                 .font(.subheadline)
@@ -102,6 +112,21 @@ struct SettingsSheet: View {
                                 isPresented: $confirmLogout, titleVisibility: .visible) {
                 Button("退出登录", role: .destructive) { store.logout() }
                 Button("取消", role: .cancel) {}
+            }
+            .disabled(exiting)
+        }
+    }
+
+    /// 退出流程：先尝试把本地数据补传上云端，成功则直接退出；仍有未同步数据才弹确认
+    private func startLogout() {
+        exiting = true
+        Task {
+            await store.syncBeforeLogout()
+            exiting = false
+            if store.pendingCount > 0 {
+                confirmLogout = true
+            } else {
+                store.logout()
             }
         }
     }

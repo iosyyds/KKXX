@@ -282,6 +282,12 @@ final class LocalStore: ObservableObject {
         Task { await syncNow(mode: .normal) }
     }
 
+    /// 退出登录前补传：把本地待同步数据尽量传上云端（联网时）
+    func syncBeforeLogout() async {
+        guard settings.isReady, pendingCount > 0 else { return }
+        await syncNow(mode: .normal)
+    }
+
     /// 退出登录：清除账号、本地缓存与待同步队列
     func logout() {
         settings.clearAccount()
