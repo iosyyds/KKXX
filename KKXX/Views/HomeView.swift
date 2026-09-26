@@ -111,7 +111,7 @@ struct HomeView: View {
             ) {
                 Button("知道了") { remoteVersion = nil }
             } message: {
-                Text(updateNote.isEmpty ? "请前往服务器下载新包安装。" : updateNote)
+                Text(updateNote.isEmpty ? "新版本已发布，请前往官方渠道下载更新。" : updateNote)
             }
             .task {
                 store.syncOnLaunchIfNeeded()

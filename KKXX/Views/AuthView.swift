@@ -90,7 +90,7 @@ struct AuthView: View {
 
                 Text(mode == .login
                      ? "没有账号？切换到「注册」创建，第一个注册的账号会自动接管旧数据。"
-                     : "注册后数据保存在你自己的服务器，不同账号数据相互隔离。")
+                     : "注册后数据自动备份到云端，不同账号数据相互隔离。")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
