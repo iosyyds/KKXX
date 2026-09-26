@@ -17,25 +17,17 @@ jobs:
 
       - name: Restore AppIcon
         run: |
-          for u in \
-            "https://aka.doubaocdn.com/s/05odxOxcF2" \
-            "https://aka.doubaocdn.com/s/8vByxagK05" \
-            "https://aka.doubaocdn.com/s/taOjV4Qj8l" ; do
-            echo "trying $u"
-            if curl -sSL --retry 3 --retry-all-errors --max-time 120 -o /tmp/kkxx_icon_src "$u"; then
-              echo "downloaded ok"
-              break
-            fi
-            echo "failed, next…"
-          done
-          sips -z 1024 1024 /tmp/kkxx_icon_src --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          cat .icon_b64/s8/b1.txt .icon_b64/s8/b2.txt .icon_b64/s8/b3.txt .icon_b64/s8/b4.txt \
+              .icon_b64/s8/b5.txt .icon_b64/s8/b6.txt .icon_b64/s8/b7.txt .icon_b64/s8/b8.txt | base64 -d > /tmp/icon_512.png
+          file /tmp/icon_512.png
+          sips -z 1024 1024 /tmp/icon_512.png --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           file KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
       - name: Install XcodeGen
         run: |
           brew install xcodegen || {
             echo "brew install failed, trying prebuilt binary…"
-            curl -sSL --retry 3 -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/XcodeGen.zip
+            curl -sSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/XcodeGen.zip
             mkdir -p "$HOME/bin"
             unzip -qo /tmp/xcodegen.zip -d "$HOME/bin"
             echo "$HOME/bin" >> "$GITHUB_PATH"
@@ -72,9 +64,7 @@ jobs:
           mkdir -p Payload
           cp -R "build/Build/Products/Release-iphoneos/KKXX.app" Payload/
           zip -qry KKXX.ipa Payload
-          echo "=== IPA 信息 ==="
           ls -lh KKXX.ipa
-          file KKXX.ipa
 
       - name: Upload IPA Artifact
         if: steps.build.outputs.exit_code == '0'
