@@ -17,7 +17,7 @@ jobs:
 
       - name: Restore AppIcon
         run: |
-          curl -sSL -o /tmp/kkxx_icon_src "https://aka.doubaocdn.com/s/05odxOxcF2"
+          curl -sSL --retry 3 --max-time 60 -o /tmp/kkxx_icon_src "https://aka.doubaocdn.com/s/05odxOxcF2"
           sips -z 1024 1024 /tmp/kkxx_icon_src --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           file KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
@@ -25,7 +25,7 @@ jobs:
         run: |
           brew install xcodegen || {
             echo "brew install failed, trying prebuilt binary…"
-            curl -sSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/XcodeGen.zip
+            curl -sSL --retry 3 -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/XcodeGen.zip
             mkdir -p "$HOME/bin"
             unzip -qo /tmp/xcodegen.zip -d "$HOME/bin"
             echo "$HOME/bin" >> "$GITHUB_PATH"
