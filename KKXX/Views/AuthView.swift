@@ -166,8 +166,8 @@ struct AuthView: View {
             settings.authToken = token
             settings.userEmail = mail
             settings.skipLogin = false
-            // 登录成功后立即拉取该账号数据
-            await store.syncNow(mode: .pullOnly)
+            // 登录成功后同步：先上传本机变更（如有），再以服务器数据合并（数据跟随账号）
+            await store.syncNow(mode: .normal)
         } catch {
             // 失败时先检测服务器链接，区分「链接失败」与「账号/业务错误」
             let reachable = (try? await SyncService().verify(settings: settings)) ?? false

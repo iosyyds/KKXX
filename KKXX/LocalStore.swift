@@ -238,12 +238,15 @@ final class LocalStore: ObservableObject {
             let payload: ServerPayload
             switch mode {
             case .normal:
-                payload = try await sync.sync(upload: uploadPayload(full: false), settings: settings)
+                let upload = uploadPayload(full: false)
+                payload = try await sync.sync(upload: upload, settings: settings)
+                clearDirty(for: upload)
             case .pullOnly:
                 payload = try await sync.pull(settings: settings)
-                clearAllDirty()
             case .pushOnly:
-                payload = try await sync.sync(upload: uploadPayload(full: true), settings: settings)
+                let upload = uploadPayload(full: true)
+                payload = try await sync.sync(upload: upload, settings: settings)
+                clearDirty(for: upload)
             }
 
             applyServer(payload)
@@ -265,35 +268,17 @@ final class LocalStore: ObservableObject {
         }
     }
 
-    private func clearAllDirty() {
-        dirtyNotes.removeAll()
-        dirtyTodos.removeAll()
-        dirtyBills.removeAll()
-        dirtyCheckins.removeAll()
-        dirtyMedboxes.removeAll()
-        save()
-    }
-
-    /// 变更后按设置自动同步（Wi-Fi 条件）
+    /// 变更后自动同步：只要网络可用就上传（数据跟随账号，不设 Wi-Fi 限制）
     private func autoSyncIfPossible() {
         guard settings.isReady else { return }
-        let net = NetworkMonitor.shared
-        let ok: Bool
-        if settings.autoSyncOnWifi {
-            ok = net.isWifi && net.isConnected
-        } else {
-            ok = net.isConnected
-        }
-        guard ok else { return }
+        guard NetworkMonitor.shared.isConnected else { return }
         Task { await syncNow(mode: .normal) }
     }
 
     /// 启动时自动拉取
     func syncOnLaunchIfNeeded() {
         guard settings.syncOnLaunch, settings.isReady else { return }
-        let net = NetworkMonitor.shared
-        let ok = settings.autoSyncOnWifi ? (net.isWifi && net.isConnected) : net.isConnected
-        guard ok else { return }
+        guard NetworkMonitor.shared.isConnected else { return }
         Task { await syncNow(mode: .normal) }
     }
 

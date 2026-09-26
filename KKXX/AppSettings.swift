@@ -37,7 +37,7 @@ final class AppSettings: ObservableObject {
         authToken = defaults.string(forKey: "kkxx.authToken") ?? ""
         userEmail = defaults.string(forKey: "kkxx.userEmail") ?? ""
         skipLogin = defaults.object(forKey: "kkxx.skipLogin") as? Bool ?? false
-        autoSyncOnWifi = defaults.object(forKey: "kkxx.autoSyncOnWifi") as? Bool ?? true
+        autoSyncOnWifi = defaults.object(forKey: "kkxx.autoSyncOnWifi") as? Bool ?? false
         syncOnLaunch = defaults.object(forKey: "kkxx.syncOnLaunch") as? Bool ?? true
         fingerprintLock = defaults.object(forKey: "kkxx.fingerprintLock") as? Bool ?? false
         theme = defaults.string(forKey: "kkxx.theme") ?? "system"

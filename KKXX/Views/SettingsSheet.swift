@@ -96,7 +96,10 @@ struct SettingsSheet: View {
                     Button("完成") { dismiss() }
                 }
             }
-            .confirmationDialog("退出登录？", isPresented: $confirmLogout, titleVisibility: .visible) {
+            .confirmationDialog(store.pendingCount > 0
+                                ? "还有 \(store.pendingCount) 条数据未同步到云端，退出后可能丢失。仍要退出？"
+                                : "退出登录？",
+                                isPresented: $confirmLogout, titleVisibility: .visible) {
                 Button("退出登录", role: .destructive) { store.logout() }
                 Button("取消", role: .cancel) {}
             }
