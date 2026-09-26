@@ -30,10 +30,11 @@ struct ServerPayload: Codable {
     var todos: [TodoItem] = []
     var bills: [Bill] = []
     var checkins: [Checkin] = []
+    var medboxes: [MedBoxItem] = []
     var serverTime: Int64 = 0
 
     enum CodingKeys: String, CodingKey {
-        case notes, todos, bills, checkins
+        case notes, todos, bills, checkins, medboxes = "medbox"
         case serverTime = "server_time"
     }
 }

@@ -7,6 +7,7 @@ final class LocalStore: ObservableObject {
     @Published var todos: [TodoItem] = []
     @Published var bills: [Bill] = []
     @Published var checkins: [Checkin] = []
+    @Published var medboxes: [MedBoxItem] = []
 
     @Published var lastSyncTime: Int64 = 0
     @Published var syncStatus = "未同步"
@@ -20,6 +21,7 @@ final class LocalStore: ObservableObject {
     private var dirtyTodos = Set<String>()
     private var dirtyBills = Set<String>()
     private var dirtyCheckins = Set<String>()
+    private var dirtyMedboxes = Set<String>()
 
     private var fileURL: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -37,11 +39,13 @@ final class LocalStore: ObservableObject {
         var todos: [TodoItem]
         var bills: [Bill]
         var checkins: [Checkin]
+        var medboxes: [MedBoxItem]
         var lastSyncTime: Int64
         var dirtyNotes: [String]
         var dirtyTodos: [String]
         var dirtyBills: [String]
         var dirtyCheckins: [String]
+        var dirtyMedboxes: [String]
     }
 
     private func load() {
@@ -51,18 +55,21 @@ final class LocalStore: ObservableObject {
         todos = snap.todos
         bills = snap.bills
         checkins = snap.checkins
+        medboxes = snap.medboxes
         lastSyncTime = snap.lastSyncTime
         dirtyNotes = Set(snap.dirtyNotes)
         dirtyTodos = Set(snap.dirtyTodos)
         dirtyBills = Set(snap.dirtyBills)
         dirtyCheckins = Set(snap.dirtyCheckins)
+        dirtyMedboxes = Set(snap.dirtyMedboxes)
     }
 
     private func save() {
-        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins,
+        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins, medboxes: medboxes,
                             lastSyncTime: lastSyncTime,
                             dirtyNotes: Array(dirtyNotes), dirtyTodos: Array(dirtyTodos),
-                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins))
+                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins),
+                            dirtyMedboxes: Array(dirtyMedboxes))
         if let data = try? JSONEncoder().encode(snap) {
             try? data.write(to: fileURL, options: .atomic)
         }
@@ -71,7 +78,7 @@ final class LocalStore: ObservableObject {
     // MARK: - 通用工具
 
     var pendingCount: Int {
-        dirtyNotes.count + dirtyTodos.count + dirtyBills.count + dirtyCheckins.count
+        dirtyNotes.count + dirtyTodos.count + dirtyBills.count + dirtyCheckins.count + dirtyMedboxes.count
     }
 
     func upsert(_ note: Note) {
@@ -135,6 +142,21 @@ final class LocalStore: ObservableObject {
         save(); autoSyncIfPossible()
     }
 
+    func upsert(_ medbox: MedBoxItem) {
+        var m = medbox; m.updatedAt = nowMs()
+        if let i = medboxes.firstIndex(where: { $0.id == m.id }) { medboxes[i] = m } else { medboxes.append(m) }
+        dirtyMedboxes.insert(m.id)
+        save(); autoSyncIfPossible()
+    }
+
+    func softDeleteMedBox(id: String) {
+        guard let i = medboxes.firstIndex(where: { $0.id == id }) else { return }
+        medboxes[i].deleted = true
+        medboxes[i].updatedAt = nowMs()
+        dirtyMedboxes.insert(id)
+        save(); autoSyncIfPossible()
+    }
+
     // MARK: - 待同步上传载荷
 
     private func uploadPayload(full: Bool) -> ServerPayload {
@@ -144,7 +166,8 @@ final class LocalStore: ObservableObject {
         return ServerPayload(notes: pick(notes, dirty: dirtyNotes),
                              todos: pick(todos, dirty: dirtyTodos),
                              bills: pick(bills, dirty: dirtyBills),
-                             checkins: pick(checkins, dirty: dirtyCheckins))
+                             checkins: pick(checkins, dirty: dirtyCheckins),
+                             medboxes: pick(medboxes, dirty: dirtyMedboxes))
     }
 
     private func clearDirty(for payload: ServerPayload) {
@@ -155,6 +178,7 @@ final class LocalStore: ObservableObject {
         dirtyTodos.subtract(remove(payload.todos))
         dirtyBills.subtract(remove(payload.bills))
         dirtyCheckins.subtract(remove(payload.checkins))
+        dirtyMedboxes.subtract(remove(payload.medboxes))
     }
 
     // MARK: - 合并服务器数据（LWW：时间戳新者胜）
@@ -182,6 +206,7 @@ final class LocalStore: ObservableObject {
         todos = mergeRows(todos, payload.todos, dirty: dirtyTodos)
         bills = mergeRows(bills, payload.bills, dirty: dirtyBills)
         checkins = mergeRows(checkins, payload.checkins, dirty: dirtyCheckins)
+        medboxes = mergeRows(medboxes, payload.medboxes, dirty: dirtyMedboxes)
     }
 
     private func purgeSyncedTombstones() {
@@ -189,6 +214,7 @@ final class LocalStore: ObservableObject {
         todos.removeAll { $0.deleted && !dirtyTodos.contains($0.id) }
         bills.removeAll { $0.deleted && !dirtyBills.contains($0.id) }
         checkins.removeAll { $0.deleted && !dirtyCheckins.contains($0.id) }
+        medboxes.removeAll { $0.deleted && !dirtyMedboxes.contains($0.id) }
     }
 
     // MARK: - 同步入口
@@ -244,6 +270,7 @@ final class LocalStore: ObservableObject {
         dirtyTodos.removeAll()
         dirtyBills.removeAll()
         dirtyCheckins.removeAll()
+        dirtyMedboxes.removeAll()
         save()
     }
 
@@ -277,10 +304,12 @@ final class LocalStore: ObservableObject {
         todos.removeAll()
         bills.removeAll()
         checkins.removeAll()
+        medboxes.removeAll()
         dirtyNotes.removeAll()
         dirtyTodos.removeAll()
         dirtyBills.removeAll()
         dirtyCheckins.removeAll()
+        dirtyMedboxes.removeAll()
         lastSyncTime = 0
         syncStatus = "未登录"
         save()
@@ -289,10 +318,11 @@ final class LocalStore: ObservableObject {
     // MARK: - 导出本地数据
 
     func exportLocalJSON() -> URL? {
-        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins,
+        let snap = Snapshot(notes: notes, todos: todos, bills: bills, checkins: checkins, medboxes: medboxes,
                             lastSyncTime: lastSyncTime,
                             dirtyNotes: Array(dirtyNotes), dirtyTodos: Array(dirtyTodos),
-                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins))
+                            dirtyBills: Array(dirtyBills), dirtyCheckins: Array(dirtyCheckins),
+                            dirtyMedboxes: Array(dirtyMedboxes))
         guard let data = try? JSONEncoder().encode(snap) else { return nil }
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("KKXX本地数据-\(Int(Date().timeIntervalSince1970)).json")

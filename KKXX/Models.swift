@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 func nowMs() -> Int64 {
     Int64(Date().timeIntervalSince1970 * 1000)
@@ -211,6 +212,113 @@ struct Checkin: Syncable {
         createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
         updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
         deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
+    }
+}
+
+struct MedBoxItem: Syncable {
+    var id: String
+    var name: String           // 药品名称
+    var purpose: String        // 功效
+    var usage: String          // 用法用量
+    var contraindication: String // 禁忌/注意事项
+    var expiryDate: Int64      // 保质期（毫秒），0 表示未设置
+    var manufacturer: String   // 厂家
+    var tags: [String]
+    var images: [String]       // base64 data URI 列表
+    var createdAt: Int64
+    var updatedAt: Int64
+    var deleted: Bool {
+        get { deletedFlag != 0 }
+        set { deletedFlag = newValue ? 1 : 0 }
+    }
+
+    private var deletedFlag: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, purpose, usage, contraindication, expiryDate, manufacturer, tags, images, createdAt, updatedAt, deletedFlag = "deleted"
+    }
+
+    init(id: String = UUID().uuidString,
+         name: String = "",
+         purpose: String = "",
+         usage: String = "",
+         contraindication: String = "",
+         expiryDate: Int64 = 0,
+         manufacturer: String = "",
+         tags: [String] = [],
+         images: [String] = [],
+         createdAt: Int64 = nowMs(),
+         updatedAt: Int64 = nowMs(),
+         deleted: Bool = false) {
+        self.id = id
+        self.name = name
+        self.purpose = purpose
+        self.usage = usage
+        self.contraindication = contraindication
+        self.expiryDate = expiryDate
+        self.manufacturer = manufacturer
+        self.tags = tags
+        self.images = images
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.deleted = deleted
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        purpose = try c.decodeIfPresent(String.self, forKey: .purpose) ?? ""
+        usage = try c.decodeIfPresent(String.self, forKey: .usage) ?? ""
+        contraindication = try c.decodeIfPresent(String.self, forKey: .contraindication) ?? ""
+        expiryDate = try c.decodeIfPresent(Int64.self, forKey: .expiryDate) ?? 0
+        manufacturer = try c.decodeIfPresent(String.self, forKey: .manufacturer) ?? ""
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        images = try c.decodeIfPresent([String].self, forKey: .images) ?? []
+        createdAt = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? nowMs()
+        updatedAt = try c.decodeIfPresent(Int64.self, forKey: .updatedAt) ?? createdAt
+        deletedFlag = decodeDeletedFlag(c, key: .deletedFlag) ? 1 : 0
+    }
+}
+
+// MARK: - 药盒状态辅助
+
+extension MedBoxItem {
+    enum ExpiryStatus {
+        case unset, normal, expiring, expired
+
+        var label: String {
+            switch self {
+            case .unset: return "未设保质期"
+            case .normal: return "正常"
+            case .expiring: return "临期"
+            case .expired: return "已过期"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .unset: return .secondary
+            case .normal: return .green
+            case .expiring: return .orange
+            case .expired: return .red
+            }
+        }
+    }
+
+    var expiryStatus: ExpiryStatus {
+        guard expiryDate > 0 else { return .unset }
+        let now = nowMs()
+        if expiryDate < now { return .expired }
+        if expiryDate < now + 30 * 86400 * 1000 { return .expiring }
+        return .normal
+    }
+
+    /// 保质期展示文案
+    var expiryText: String {
+        guard expiryDate > 0 else { return "未设置" }
+        let d = Date(timeIntervalSince1970: TimeInterval(expiryDate) / 1000)
+        return d.formatted(.dateTime.year().month().day())
     }
 }
 

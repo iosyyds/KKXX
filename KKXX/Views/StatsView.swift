@@ -13,6 +13,10 @@ struct StatsView: View {
     private var visibleTodos: [TodoItem] { store.todos.filter { !$0.deleted } }
     private var visibleBills: [Bill] { store.bills.filter { !$0.deleted } }
     private var visibleCheckins: [Checkin] { store.checkins.filter { !$0.deleted } }
+    private var visibleMedboxes: [MedBoxItem] { store.medboxes.filter { !$0.deleted } }
+
+    private var medExpiring: Int { visibleMedboxes.filter { $0.expiryStatus == .expiring }.count }
+    private var medExpired: Int { visibleMedboxes.filter { $0.expiryStatus == .expired }.count }
 
     private var monthIncome: Double {
         monthBills.filter { $0.type == "income" }.reduce(0) { $0 + $1.amount }
@@ -70,6 +74,8 @@ struct StatsView: View {
                     card("本月支出", yuan(monthExpense), .red, "arrow.up.circle.fill")
                     card("打卡连续", "\(streak) 天", .purple, "flame.fill")
                     card("打卡累计", "\(visibleCheckins.count) 次", .teal, "calendar")
+                    card("常备药品", "\(visibleMedboxes.count) 种", medRed, "pills")
+                    card("临期·过期", "\(medExpiring) · \(medExpired)", .orange, "exclamationmark.triangle.fill")
                 }
                 .padding(.horizontal)
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Module: String, Hashable, CaseIterable {
-    case notes, todos, bills, checkin, tools, stats
+    case notes, todos, bills, checkin, medbox, tools, stats
 
     var title: String {
         switch self {
@@ -9,6 +9,7 @@ enum Module: String, Hashable, CaseIterable {
         case .todos: return "待办"
         case .bills: return "记账"
         case .checkin: return "习惯打卡"
+        case .medbox: return "药盒"
         case .tools: return "小工具"
         case .stats: return "数据总览"
         }
@@ -20,6 +21,7 @@ enum Module: String, Hashable, CaseIterable {
         case .todos: return "checklist"
         case .bills: return "yensign.circle"
         case .checkin: return "calendar"
+        case .medbox: return "pills"
         case .tools: return "wrench.and.screwdriver"
         case .stats: return "chart.pie"
         }
@@ -31,6 +33,7 @@ enum Module: String, Hashable, CaseIterable {
         case .todos: return Color(red: 0.95, green: 0.60, blue: 0.16)   // 橙
         case .bills: return Color(red: 0.07, green: 0.76, blue: 0.40)   // 绿
         case .checkin: return Color(red: 0.62, green: 0.36, blue: 0.95) // 紫
+        case .medbox: return Color(red: 0.95, green: 0.30, blue: 0.40)  // 红
         case .tools: return Color(red: 0.05, green: 0.68, blue: 0.68)   // 青
         case .stats: return Color(red: 0.95, green: 0.35, blue: 0.55)   // 粉
         }
@@ -38,7 +41,7 @@ enum Module: String, Hashable, CaseIterable {
 }
 
 enum NewItemType: String, Identifiable {
-    case note, todo, bill
+    case note, todo, bill, medbox
     var id: String { rawValue }
 }
 
@@ -56,7 +59,7 @@ struct HomeView: View {
     @State private var remoteVersion: String?
     @State private var updateNote = ""
 
-    private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -88,6 +91,7 @@ struct HomeView: View {
                 case .note: NoteEditorView(note: Note())
                 case .todo: TodoEditorView(todo: TodoItem())
                 case .bill: BillEditorView(bill: Bill())
+                case .medbox: MedBoxEditorView(item: MedBoxItem())
                 }
             }
             .overlay(alignment: .bottomTrailing) { fab }
@@ -143,21 +147,22 @@ struct HomeView: View {
             LazyVGrid(columns: columns, spacing: 14) {
                 ForEach(Module.allCases, id: \.self) { m in
                     NavigationLink(value: m) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            IconBadge(symbol: m.symbol, color: m.color, size: 44, corner: 13)
+                        VStack(alignment: .leading, spacing: 9) {
+                            IconBadge(symbol: m.symbol, color: m.color, size: 38, corner: 12)
                             Spacer(minLength: 0)
                             Text(m.title)
-                                .font(.headline)
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundColor(.primary)
+                                .lineLimit(1)
                             Text(subtitle(m))
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, minHeight: 128, alignment: .leading)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, minHeight: 106, alignment: .leading)
                         .background(Color(uiColor: .secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
                 }
@@ -177,6 +182,13 @@ struct HomeView: View {
             return "\(store.bills.filter { !$0.deleted }.count) 笔记录"
         case .checkin:
             return "累计打卡 \(store.checkins.filter { !$0.deleted }.count) 次"
+        case .medbox:
+            let active = store.medboxes.filter { !$0.deleted }
+            let expired = active.filter { $0.expiryStatus == .expired }.count
+            let expiring = active.filter { $0.expiryStatus == .expiring }.count
+            if expired > 0 { return "已过期 \(expired) · 临期 \(expiring)" }
+            if expiring > 0 { return "临期 \(expiring) 种 · 共 \(active.count) 种" }
+            return "常备 \(active.count) 种药"
         case .tools:
             return "计算与换算"
         case .stats:
@@ -221,7 +233,17 @@ struct HomeView: View {
                     }
                 }
             }
-            if matchNotes.isEmpty && matchTodos.isEmpty && matchBills.isEmpty {
+            let matchMedboxes = store.medboxes.filter { !$0.deleted && ($0.name.localizedCaseInsensitiveContains(keyword) || $0.purpose.localizedCaseInsensitiveContains(keyword) || $0.usage.localizedCaseInsensitiveContains(keyword) || $0.manufacturer.localizedCaseInsensitiveContains(keyword)) }
+            if !matchMedboxes.isEmpty {
+                Section("药盒") {
+                    ForEach(matchMedboxes) { m in
+                        NavigationLink(value: Module.medbox) {
+                            Label(m.name.isEmpty ? "（未命名药品）" : m.name, systemImage: "pills")
+                        }
+                    }
+                }
+            }
+            if matchNotes.isEmpty && matchTodos.isEmpty && matchBills.isEmpty && matchMedboxes.isEmpty {
                 Text("没有匹配结果")
                     .foregroundColor(.secondary)
             }
@@ -236,6 +258,7 @@ struct HomeView: View {
         case .todos: TodosView()
         case .bills: BillsView()
         case .checkin: CheckinView()
+        case .medbox: MedBoxView()
         case .tools: ToolsView()
         case .stats: StatsView()
         }
@@ -288,9 +311,11 @@ struct NewMenuSheet: View {
             menuRow("checklist", "新建待办", .orange) { onPick(.todo) }
             Divider().padding(.leading, 72)
             menuRow("yensign.circle", "记一笔", .green) { onPick(.bill) }
+            Divider().padding(.leading, 72)
+            menuRow("pills", "记录药品", .red) { onPick(.medbox) }
             Spacer(minLength: 0)
         }
-        .presentationDetents([.height(250)])
+        .presentationDetents([.height(310)])
         .presentationDragIndicator(.visible)
     }
 
