@@ -147,7 +147,7 @@ struct AuthView: View {
         let mail = email.trimmingCharacters(in: .whitespaces).lowercased()
         let pass = password
 
-        guard !settings.normalizedServerURL.isEmpty else { errorMessage = "服务器地址未配置，请在「云同步」设置中填写"; return }
+        guard !settings.normalizedServerURL.isEmpty else { errorMessage = "服务初始化未完成，请重新打开应用"; return }
         guard mail.contains("@") && mail.contains(".") else { errorMessage = "邮箱格式不正确"; return }
         guard pass.count >= 6 else { errorMessage = "密码至少 6 位"; return }
         if mode == .register {

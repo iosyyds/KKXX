@@ -101,19 +101,6 @@ struct StatsView: View {
                 .background(Color(uiColor: .secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal)
-
-                // 同步状态
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("同步状态").font(.headline)
-                    LabeledContent("上次同步", value: shortTime(store.lastSyncTime))
-                    LabeledContent("待同步操作", value: "\(store.pendingCount)")
-                    LabeledContent("状态", value: store.syncStatus)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal)
             }
             .padding(.vertical)
         }

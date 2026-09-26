@@ -30,7 +30,6 @@ struct TodoEditorView: View {
                         .autocorrectionDisabled()
                 }
                 Section {
-                    Button("保存") { save() }
                     if store.todos.contains(where: { $0.id == todo.id }) {
                         Button("删除待办", role: .destructive) {
                             store.softDeleteTodo(id: todo.id)
@@ -44,6 +43,9 @@ struct TodoEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
                 }
             }
             .onAppear {

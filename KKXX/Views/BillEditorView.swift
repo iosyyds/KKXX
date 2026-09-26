@@ -55,7 +55,6 @@ struct BillEditorView: View {
                     DatePicker("账单日期", selection: bindingDate, displayedComponents: [.date])
                 }
                 Section {
-                    Button("保存") { save() }
                     if store.bills.contains(where: { $0.id == bill.id }) {
                         Button("删除账单", role: .destructive) {
                             store.softDeleteBill(id: bill.id)
@@ -69,6 +68,9 @@ struct BillEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
                 }
             }
             .onAppear {

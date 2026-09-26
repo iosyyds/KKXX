@@ -49,7 +49,6 @@ struct NoteEditorView: View {
                         .autocorrectionDisabled()
                 }
                 Section {
-                    Button("保存") { save() }
                     if store.notes.contains(where: { $0.id == note.id }) {
                         Button("删除笔记", role: .destructive) {
                             store.softDeleteNote(id: note.id)
@@ -63,6 +62,9 @@ struct NoteEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
                 }
             }
             .onAppear { tagText = note.tags.joined(separator: ", ") }

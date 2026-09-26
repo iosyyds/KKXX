@@ -39,17 +39,11 @@ struct SettingsSheet: View {
                         LabeledContent("登录账号", value: settings.userEmail.isEmpty ? "-" : settings.userEmail)
                         Button("退出登录", role: .destructive) { confirmLogout = true }
                     } else if settings.skipLogin {
-                        LabeledContent("当前状态", value: "仅本地使用（未登录）")
+                        LabeledContent("当前状态", value: "未登录，仅本地使用")
                         NavigationLink("登录 / 注册账号") { AuthView() }
                     } else {
                         NavigationLink("登录 / 注册账号") { AuthView() }
                     }
-                }
-
-                Section("云同步") {
-                    NavigationLink("云同步设置") { SyncSettingsView() }
-                    LabeledContent("服务器", value: settings.normalizedServerURL.isEmpty ? "未配置" : settings.normalizedServerURL)
-                    LabeledContent("同步状态", value: store.syncStatus)
                 }
 
                 Section("外观") {
@@ -76,7 +70,7 @@ struct SettingsSheet: View {
                 Section("关于") {
                     LabeledContent("应用", value: "KKXX")
                     LabeledContent("版本", value: "1.1.0")
-                    LabeledContent("数据存储", value: "本地缓存 + 账号云同步")
+                    LabeledContent("数据存储", value: "本地存储，登录后自动备份")
                 }
             }
             .navigationTitle("设置")

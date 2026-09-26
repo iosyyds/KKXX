@@ -28,10 +28,10 @@ enum Module: String, Hashable, CaseIterable {
     var color: Color {
         switch self {
         case .notes: return Color(red: 0.29, green: 0.57, blue: 0.98)   // 蓝
-        case .todos: return Color(red: 0.98, green: 0.62, blue: 0.20)   // 橙
+        case .todos: return Color(red: 0.95, green: 0.60, blue: 0.16)   // 橙
         case .bills: return Color(red: 0.07, green: 0.76, blue: 0.40)   // 绿
         case .checkin: return Color(red: 0.62, green: 0.36, blue: 0.95) // 紫
-        case .tools: return Color(red: 0.05, green: 0.70, blue: 0.70)   // 青
+        case .tools: return Color(red: 0.05, green: 0.68, blue: 0.68)   // 青
         case .stats: return Color(red: 0.95, green: 0.35, blue: 0.55)   // 粉
         }
     }
@@ -49,7 +49,7 @@ struct HomeView: View {
     @State private var search = ""
     @State private var showSettings = false
     @State private var path = NavigationPath()
-    @State private var showFabDialog = false
+    @State private var showNewMenu = false
     @State private var newItem: NewItemType?
 
     @State private var announcement: AppAnnouncement?
@@ -58,33 +58,31 @@ struct HomeView: View {
 
     private let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
-    private var todayLine: String {
-        Date().formatted(.dateTime.month(.wide).day().weekday(.wide))
-    }
-
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(spacing: 16) {
-                    header
-                    searchBar
-                    if search.trimmingCharacters(in: .whitespaces).isEmpty {
-                        moduleGrid
-                    } else {
-                        searchResults
-                    }
+            Group {
+                if search.trimmingCharacters(in: .whitespaces).isEmpty {
+                    moduleGrid
+                } else {
+                    searchResults
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
             }
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("KKXX")
             .navigationBarTitleDisplayMode(.large)
+            .searchable(
+                text: $search,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "搜索笔记、待办、账单…"
+            )
             .navigationDestination(for: Module.self) { m in
                 destination(m)
             }
             .toolbar { avatarButton }
             .sheet(isPresented: $showSettings) { SettingsSheet() }
+            .sheet(isPresented: $showNewMenu) {
+                NewMenuSheet { item in newItem = item }
+            }
             .sheet(item: $newItem) { item in
                 switch item {
                 case .note: NoteEditorView(note: Note())
@@ -93,12 +91,6 @@ struct HomeView: View {
                 }
             }
             .overlay(alignment: .bottomTrailing) { fab }
-            .confirmationDialog("新建", isPresented: $showFabDialog, titleVisibility: .visible) {
-                Button("新建笔记") { newItem = .note }
-                Button("新建待办") { newItem = .todo }
-                Button("记一笔") { newItem = .bill }
-                Button("取消", role: .cancel) {}
-            }
             .alert(
                 announcement?.title ?? "公告",
                 isPresented: Binding(
@@ -128,7 +120,7 @@ struct HomeView: View {
         }
     }
 
-    /// 启动时拉取应用信息：公告弹窗 + 版本更新提示
+    /// 启动时拉取应用信息：公告弹窗 + 版本更新提示（静默，失败不打扰）
     private func checkAppInfo() async {
         guard settings.isReady else { return }
         do {
@@ -141,89 +133,46 @@ struct HomeView: View {
                 updateNote = info.updateNote
             }
         } catch {
-            // 静默：拉取失败不打扰用户
+            // 静默
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(todayLine)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(store.isSyncing ? Color.orange : Color.green)
-                        .frame(width: 8, height: 8)
-                    Text(store.syncStatus)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer()
-        }
-        .padding(.top, 4)
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-            TextField("搜索笔记、待办、账单…", text: $search)
-                .autocorrectionDisabled()
-            if !search.isEmpty {
-                Button {
-                    search = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .padding(12)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
+    /// 首页宫格：苹果原生卡片风格
     private var moduleGrid: some View {
-        LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(Module.allCases, id: \.self) { m in
-                NavigationLink(value: m) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.22))
-                            Image(systemName: m.symbol)
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 14) {
+                ForEach(Module.allCases, id: \.self) { m in
+                    NavigationLink(value: m) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 11)
+                                    .fill(m.color.opacity(0.14))
+                                Image(systemName: m.symbol)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(m.color)
+                            }
+                            .frame(width: 38, height: 38)
+
+                            Spacer(minLength: 0)
+
+                            Text(m.title)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Text(subtitle(m))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
                         }
-                        .frame(width: 42, height: 42)
-
-                        Spacer(minLength: 0)
-
-                        Text(m.title)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        Text(subtitle(m))
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(1)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, minHeight: 122, alignment: .leading)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .padding(14)
-                    .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
-                    .background(
-                        LinearGradient(
-                            colors: [m.color, m.color.opacity(0.72)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .shadow(color: m.color.opacity(0.30), radius: 8, x: 0, y: 4)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal)
+            .padding(.top, 4)
         }
     }
 
@@ -286,7 +235,6 @@ struct HomeView: View {
                     .foregroundColor(.secondary)
             }
         }
-        .scrollContentBackground(.hidden)
         .listStyle(.insetGrouped)
     }
 
@@ -313,7 +261,7 @@ struct HomeView: View {
     }
 
     private var fab: some View {
-        Button { showFabDialog = true } label: {
+        Button { showNewMenu = true } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
                 .foregroundColor(.white)
@@ -327,9 +275,54 @@ struct HomeView: View {
                         )
                     )
                 )
-                .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.40), radius: 8, x: 0, y: 4)
+                .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.35), radius: 8, x: 0, y: 4)
         }
         .padding(20)
+    }
+}
+
+/// 底部新建菜单：从底部滑出的原生样式操作列表
+struct NewMenuSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let onPick: (NewItemType) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("新建")
+                .font(.headline)
+                .padding(.top, 20)
+                .padding(.bottom, 4)
+            menuRow("note.text", "新建笔记", .blue) { onPick(.note) }
+            Divider().padding(.leading, 60)
+            menuRow("checklist", "新建待办", .orange) { onPick(.todo) }
+            Divider().padding(.leading, 60)
+            menuRow("yensign.circle", "记一笔", .green) { onPick(.bill) }
+            Spacer(minLength: 0)
+        }
+        .presentationDetents([.height(230)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func menuRow(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
+        Button {
+            dismiss()
+            action()
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .foregroundColor(color)
+                    .frame(width: 32)
+                Text(title)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
