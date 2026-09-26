@@ -17,7 +17,18 @@ jobs:
 
       - name: Restore AppIcon
         run: |
-          cat .icon_b64/icon_b64_p1.txt .icon_b64/icon_b64_p2.txt .icon_b64/icon_b64_p3.txt | base64 -d > KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          for u in \
+            "https://aka.doubaocdn.com/s/05odxOxcF2" \
+            "https://aka.doubaocdn.com/s/8vByxagK05" \
+            "https://aka.doubaocdn.com/s/taOjV4Qj8l" ; do
+            echo "trying $u"
+            if curl -sSL --retry 3 --retry-all-errors --max-time 120 -o /tmp/kkxx_icon_src "$u"; then
+              echo "downloaded ok"
+              break
+            fi
+            echo "failed, next…"
+          done
+          sips -z 1024 1024 /tmp/kkxx_icon_src --out KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           file KKXX/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
       - name: Install XcodeGen
