@@ -218,7 +218,48 @@ struct SyncService {
         return auth.token
     }
 
-    // MARK: - 同步
+    // MARK: - 用户资料（昵称 / 头像）
+
+    struct ProfileData: Codable {
+        var nickname: String
+        var avatar: String   // base64 PNG，空串表示未设置
+        var email: String
+    }
+
+    private struct ProfileEnvelope: Decodable {
+        var code: Int
+        var msg: String
+        var data: ProfileData?
+    }
+
+    /// POST /api/profile.php {action:"get"} —— 拉取服务器资料
+    func fetchProfile(settings: AppSettings) async throws -> ProfileData {
+        let base = settings.normalizedServerURL
+        guard !base.isEmpty, let url = URL(string: "\(base)/api/profile.php") else {
+            throw SyncError.badURL
+        }
+        struct Body: Encodable { var action: String }
+        let data = try await postJSON(url, body: Body(action: "get"), token: settings.authToken)
+        let envelope = try JSONDecoder().decode(ProfileEnvelope.self, from: data)
+        guard envelope.code == 0, let p = envelope.data else {
+            throw SyncError.server(envelope.code, envelope.msg)
+        }
+        return p
+    }
+
+    /// POST /api/profile.php {action:"update"} —— 上传昵称/头像（头像为 base64 PNG）
+    func updateProfile(nickname: String, avatarB64: String, settings: AppSettings) async throws {
+        let base = settings.normalizedServerURL
+        guard !base.isEmpty, let url = URL(string: "\(base)/api/profile.php") else {
+            throw SyncError.badURL
+        }
+        struct Body: Encodable { var action: String; var nickname: String; var avatar: String }
+        let data = try await postJSON(url, body: Body(action: "update", nickname: nickname, avatar: avatarB64), token: settings.authToken)
+        let envelope = try JSONDecoder().decode(ProfileEnvelope.self, from: data)
+        guard envelope.code == 0 else {
+            throw SyncError.server(envelope.code, envelope.msg)
+        }
+    }
 
     /// GET /api/pull.php —— 拉取服务器全量数据（需登录）
     func pull(settings: AppSettings) async throws -> ServerPayload {
