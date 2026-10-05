@@ -36,7 +36,22 @@ struct AuthView: View {
                 .padding(.horizontal, 4)
 
                 VStack(spacing: 0) {
-                    fieldRow("邮箱", text: $email, keyboard: .emailAddress, placeholder: "you@example.com")
+                    HStack(spacing: 12) {
+                        Text("账号")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(width: 68, alignment: .leading)
+                        TextField("输入账号前缀", text: $email)
+                            .font(.subheadline)
+                            .keyboardType(.asciiCapable)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        Text("@qq.com")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
                     Divider().padding(.leading, 44)
                     fieldRow("密码", text: $password, secure: true, placeholder: "至少 6 位")
                     if mode == .register {
@@ -144,11 +159,18 @@ struct AuthView: View {
 
     private func submit() async {
         errorMessage = nil
-        let mail = email.trimmingCharacters(in: .whitespaces).lowercased()
+        let rawInput = email.trimmingCharacters(in: .whitespaces).lowercased()
+        // 支持只输前缀（自动补 @qq.com），也兼容直接输完整邮箱
+        let mail: String
+        if rawInput.contains("@") {
+            mail = rawInput
+        } else {
+            mail = rawInput + "@qq.com"
+        }
         let pass = password
 
         guard !settings.normalizedServerURL.isEmpty else { errorMessage = "服务初始化未完成，请重新打开应用"; return }
-        guard mail.contains("@") && mail.contains(".") else { errorMessage = "邮箱格式不正确"; return }
+        guard !rawInput.isEmpty else { errorMessage = "请输入账号"; return }
         guard pass.count >= 6 else { errorMessage = "密码至少 6 位"; return }
         if mode == .register {
             guard pass == confirm else { errorMessage = "两次输入的密码不一致"; return }

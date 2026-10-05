@@ -29,13 +29,13 @@ enum Module: String, Hashable, CaseIterable {
 
     var color: Color {
         switch self {
-        case .notes: return Color(red: 0.29, green: 0.57, blue: 0.98)   // 蓝
-        case .todos: return Color(red: 0.95, green: 0.60, blue: 0.16)   // 橙
-        case .bills: return Color(red: 0.07, green: 0.76, blue: 0.40)   // 绿
-        case .checkin: return Color(red: 0.62, green: 0.36, blue: 0.95) // 紫
-        case .medbox: return Color(red: 0.95, green: 0.30, blue: 0.40)  // 红
-        case .tools: return Color(red: 0.05, green: 0.68, blue: 0.68)   // 青
-        case .stats: return Color(red: 0.95, green: 0.35, blue: 0.55)   // 粉
+        case .notes: return Color(red: 0.29, green: 0.57, blue: 0.98)
+        case .todos: return Color(red: 0.95, green: 0.60, blue: 0.16)
+        case .bills: return Color(red: 0.07, green: 0.76, blue: 0.40)
+        case .checkin: return Color(red: 0.62, green: 0.36, blue: 0.95)
+        case .medbox: return Color(red: 0.95, green: 0.30, blue: 0.40)
+        case .tools: return Color(red: 0.05, green: 0.68, blue: 0.68)
+        case .stats: return Color(red: 0.95, green: 0.35, blue: 0.55)
         }
     }
 }
@@ -48,6 +48,7 @@ enum NewItemType: String, Identifiable {
 struct HomeView: View {
     @EnvironmentObject var store: LocalStore
     @EnvironmentObject var settings: AppSettings
+    var currentTab: Binding<MainTabView.Tab>?
 
     @State private var search = ""
     @State private var showSettings = false
@@ -65,7 +66,7 @@ struct HomeView: View {
         NavigationStack(path: $path) {
             Group {
                 if search.trimmingCharacters(in: .whitespaces).isEmpty {
-                    moduleGrid
+                    content
                 } else {
                     searchResults
                 }
@@ -81,7 +82,6 @@ struct HomeView: View {
             .navigationDestination(for: Module.self) { m in
                 destination(m)
             }
-            .toolbar { avatarButton }
             .sheet(isPresented: $showSettings) { SettingsSheet() }
             .sheet(isPresented: $showNewMenu) {
                 NewMenuSheet { item in newItem = item }
@@ -141,35 +141,110 @@ struct HomeView: View {
         }
     }
 
-    /// 首页宫格：苹果原生卡片风格（精致版）
-    private var moduleGrid: some View {
+    /// 首页主体：今日概览卡片 + 次要功能宫格
+    private var content: some View {
         ScrollView {
+            VStack(spacing: 18) {
+                overviewCards
+                quickGrid
+            }
+            .padding(.bottom, 8)
+        }
+    }
+
+    /// 今日概览：4 个数据卡片
+    private var overviewCards: some View {
+        HStack(spacing: 10) {
+            statCard(title: "待办", value: "\(openTodos)", icon: "checklist", color: .orange)
+            statCard(title: "本月支出", value: yuan(monthExpense), icon: "creditcard", color: .blue)
+            statCard(title: "打卡", value: "\(checkinCount)", icon: "calendar", color: .purple)
+            statCard(title: "药品", value: "\(medCount)", icon: "pills", color: .red)
+        }
+        .padding(.horizontal)
+        .padding(.top, 6)
+    }
+
+    private func statCard(title: String, value: String, icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(color)
+                Spacer()
+            }
+            Text(value)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(title)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    /// 快捷入口宫格：只放次要模块（笔记/待办/账单已在底部 Tab）
+    private var quickGrid: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("更多功能")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.primary)
+                .padding(.horizontal)
             LazyVGrid(columns: columns, spacing: 14) {
-                ForEach(Module.allCases, id: \.self) { m in
-                    NavigationLink(value: m) {
-                        VStack(alignment: .leading, spacing: 9) {
-                            IconBadge(symbol: m.symbol, color: m.color, size: 38, corner: 12)
-                            Spacer(minLength: 0)
-                            Text(m.title)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                            Text(subtitle(m))
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, minHeight: 106, alignment: .leading)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                    }
-                    .buttonStyle(.plain)
-                }
+                quickItem(.checkin)
+                quickItem(.medbox)
+                quickItem(.tools)
+                quickItem(.stats)
             }
             .padding(.horizontal)
-            .padding(.top, 4)
         }
+    }
+
+    private func quickItem(_ m: Module) -> some View {
+        NavigationLink(value: m) {
+            VStack(alignment: .leading, spacing: 9) {
+                IconBadge(symbol: m.symbol, color: m.color, size: 38, corner: 12)
+                Spacer(minLength: 0)
+                Text(m.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                Text(subtitle(m))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 104, alignment: .leading)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - 概览数据
+
+    private var openTodos: Int {
+        store.todos.filter { !$0.deleted && !$0.done }.count
+    }
+
+    private var monthExpense: Double {
+        let cal = Calendar.current
+        let now = Date()
+        return store.bills.filter { !$0.deleted && $0.type == "expense" && cal.isDate(Date(timeIntervalSince1970: TimeInterval($0.billDate) / 1000), equalTo: now, toGranularity: .month) }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    private var checkinCount: Int {
+        store.checkins.filter { !$0.deleted }.count
+    }
+
+    private var medCount: Int {
+        store.medboxes.filter { !$0.deleted }.count
     }
 
     private func subtitle(_ m: Module) -> String {
@@ -177,11 +252,11 @@ struct HomeView: View {
         case .notes:
             return "\(store.notes.filter { !$0.deleted }.count) 篇笔记"
         case .todos:
-            return "\(store.todos.filter { !$0.deleted && !$0.done }.count) 项待完成"
+            return "\(openTodos) 项待完成"
         case .bills:
             return "\(store.bills.filter { !$0.deleted }.count) 笔记录"
         case .checkin:
-            return "累计打卡 \(store.checkins.filter { !$0.deleted }.count) 次"
+            return "累计打卡 \(checkinCount) 次"
         case .medbox:
             let active = store.medboxes.filter { !$0.deleted }
             let expired = active.filter { $0.expiryStatus == .expired }.count
@@ -264,16 +339,6 @@ struct HomeView: View {
         }
     }
 
-    private var avatarButton: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button { showSettings = true } label: {
-                Image(systemName: "person.crop.circle")
-                    .font(.title3)
-                    .foregroundColor(Color(red: 0.07, green: 0.76, blue: 0.40))
-            }
-        }
-    }
-
     private var fab: some View {
         Button { showNewMenu = true } label: {
             Image(systemName: "plus")
@@ -342,4 +407,4 @@ struct NewMenuSheet: View {
     }
 }
 
-#Preview { HomeView() }
+#Preview { HomeView(currentTab: .constant(.home)) }
