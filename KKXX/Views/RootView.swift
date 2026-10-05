@@ -68,7 +68,7 @@ struct MainTabView: View {
                 tabContent(.bills)
                 tabContent(.me)
             }
-            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
+            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 96) }
 
             floatingTabBar
         }

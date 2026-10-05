@@ -36,6 +36,7 @@ struct ToolsView: View {
             }
             .padding(12)
         }
+        .padding(.bottom, 90)
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("小工具")
         .toolbar {
@@ -147,4 +148,5 @@ struct ToolsView: View {
     }
 }
 
+/// 让渐变色可以直接作为背景填充（辅助扩展）
 #Preview { ToolsView() }

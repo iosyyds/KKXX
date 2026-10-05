@@ -96,6 +96,11 @@ struct MedBoxView: View {
                                 .onTapGesture { editing = m }
                         }
                     }
+
+                    Color.clear
+                        .frame(height: 100)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
                 .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索药名、功效…")

@@ -107,6 +107,8 @@ struct CheckinView: View {
                 .background(Color(uiColor: .secondarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .padding(.horizontal)
+
+            Color.clear.frame(height: 100)
             }
             .padding(.vertical)
         }
