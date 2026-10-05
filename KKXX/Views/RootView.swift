@@ -79,10 +79,10 @@ struct MainTabView: View {
         Group {
             switch t {
             case .home: HomeView(currentTab: $tab)
-            case .notes: NotesView()
-            case .todos: TodosView()
-            case .bills: BillsView()
-            case .me: MeView()
+            case .notes: NavigationStack { NotesView() }
+            case .todos: NavigationStack { TodosView() }
+            case .bills: NavigationStack { BillsView() }
+            case .me: NavigationStack { MeView() }
             }
         }
         .opacity(tab == t ? 1 : 0)
