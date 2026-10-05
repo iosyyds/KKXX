@@ -41,9 +41,9 @@ struct AuthView: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .frame(width: 68, alignment: .leading)
-                        TextField("输入账号前缀", text: $email)
+                        TextField("输入 QQ 号", text: $email)
                             .font(.subheadline)
-                            .keyboardType(.asciiCapable)
+                            .keyboardType(.numberPad)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                         Text("@qq.com")
@@ -94,18 +94,9 @@ struct AuthView: View {
                 }
                 .disabled(busy)
 
-                Button {
-                    settings.skipLogin = true
-                } label: {
-                    Text("暂不登录")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .padding(.vertical, 6)
-                }
-
                 Text(mode == .login
                      ? "没有账号？切换到「注册」创建一个，登录后数据自动同步。"
-                     : "数据保存在云端，登录后多设备自动同步，不同账号数据相互隔离。")
+                     : "登录后数据保存在云端，多设备自动同步。")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

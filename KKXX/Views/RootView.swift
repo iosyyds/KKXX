@@ -9,16 +9,21 @@ struct MainTabView: View {
     @EnvironmentObject var settings: AppSettings
     @State private var unlocked = false
     @State private var tab: Tab = .home
+    private let feedback = UISelectionFeedbackGenerator()
 
     var body: some View {
         Group {
             if settings.fingerprintLock && !unlocked {
                 LockView(unlocked: $unlocked)
-            } else if settings.canEnter {
+            } else if settings.isLoggedIn {
                 tabBody
             } else {
                 AuthView()
             }
+        }
+        .task {
+            // 启动即发起一次网络请求，触发系统「允许使用无线数据」弹窗
+            _ = try? await SyncService().verify(settings: settings)
         }
     }
 
@@ -61,11 +66,15 @@ struct MainTabView: View {
     private func tabButton(_ t: Tab, symbol: String, title: String) -> some View {
         let selected = tab == t
         return Button {
-            withAnimation(.easeInOut(duration: 0.18)) { tab = t }
+            feedback.selectionChanged()
+            if tab != t {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) { tab = t }
+            }
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
                     .font(.system(size: 20, weight: selected ? .semibold : .regular))
+                    .scaleEffect(selected ? 1.0 : 0.92)
                 Text(title)
                     .font(.system(size: 10, weight: selected ? .semibold : .regular))
             }

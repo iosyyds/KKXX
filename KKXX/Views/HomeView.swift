@@ -40,21 +40,13 @@ enum Module: String, Hashable, CaseIterable {
     }
 }
 
-enum NewItemType: String, Identifiable {
-    case note, todo, bill, medbox
-    var id: String { rawValue }
-}
-
 struct HomeView: View {
     @EnvironmentObject var store: LocalStore
     @EnvironmentObject var settings: AppSettings
     var currentTab: Binding<MainTabView.Tab>?
 
     @State private var search = ""
-    @State private var showSettings = false
     @State private var path = NavigationPath()
-    @State private var showNewMenu = false
-    @State private var newItem: NewItemType?
 
     @State private var announcement: AppAnnouncement?
     @State private var remoteVersion: String?
@@ -72,7 +64,7 @@ struct HomeView: View {
                 }
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("KKXX")
+            .navigationTitle("今天")
             .navigationBarTitleDisplayMode(.large)
             .searchable(
                 text: $search,
@@ -82,19 +74,6 @@ struct HomeView: View {
             .navigationDestination(for: Module.self) { m in
                 destination(m)
             }
-            .sheet(isPresented: $showSettings) { SettingsSheet() }
-            .sheet(isPresented: $showNewMenu) {
-                NewMenuSheet { item in newItem = item }
-            }
-            .sheet(item: $newItem) { item in
-                switch item {
-                case .note: NoteEditorView(note: Note())
-                case .todo: TodoEditorView(todo: TodoItem())
-                case .bill: BillEditorView(bill: Bill())
-                case .medbox: MedBoxEditorView(item: MedBoxItem())
-                }
-            }
-            .overlay(alignment: .bottomTrailing) { fab }
             .alert(
                 announcement?.title ?? "公告",
                 isPresented: Binding(
@@ -124,7 +103,6 @@ struct HomeView: View {
         }
     }
 
-    /// 启动时拉取应用信息：公告弹窗 + 版本更新提示（静默，失败不打扰）
     private func checkAppInfo() async {
         guard settings.isReady else { return }
         do {
@@ -141,7 +119,7 @@ struct HomeView: View {
         }
     }
 
-    /// 首页主体：今日概览卡片 + 次要功能宫格
+    /// 首页主体：今日概览 + 次要功能宫格
     private var content: some View {
         ScrollView {
             VStack(spacing: 18) {
@@ -155,10 +133,10 @@ struct HomeView: View {
     /// 今日概览：4 个数据卡片
     private var overviewCards: some View {
         HStack(spacing: 10) {
-            statCard(title: "待办", value: "\(openTodos)", icon: "checklist", color: .orange)
-            statCard(title: "本月支出", value: yuan(monthExpense), icon: "creditcard", color: .blue)
-            statCard(title: "打卡", value: "\(checkinCount)", icon: "calendar", color: .purple)
-            statCard(title: "药品", value: "\(medCount)", icon: "pills", color: .red)
+            statCard(title: "今日待办", value: "\(todayTodos)", icon: "checklist", color: .orange)
+            statCard(title: "今日支出", value: yuan(todayExpense), icon: "creditcard", color: .blue)
+            statCard(title: "连续打卡", value: "\(streakDays)天", icon: "flame", color: .purple)
+            statCard(title: "常备药品", value: "\(medCount)", icon: "pills", color: .red)
         }
         .padding(.horizontal)
         .padding(.top, 6)
@@ -213,62 +191,51 @@ struct HomeView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.primary)
                     .lineLimit(1)
-                Text(subtitle(m))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
             }
             .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 104, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
             .background(Color(uiColor: .secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - 概览数据
+    // MARK: - 今日数据
 
-    private var openTodos: Int {
-        store.todos.filter { !$0.deleted && !$0.done }.count
+    private var todayTodos: Int {
+        let cal = Calendar.current
+        return store.todos.filter { !$0.deleted && !$0.done && $0.dueDate > 0 &&
+            cal.isDate(Date(timeIntervalSince1970: TimeInterval($0.dueDate) / 1000), inSameDayAs: Date()) }.count
     }
 
-    private var monthExpense: Double {
+    private var todayExpense: Double {
         let cal = Calendar.current
-        let now = Date()
-        return store.bills.filter { !$0.deleted && $0.type == "expense" && cal.isDate(Date(timeIntervalSince1970: TimeInterval($0.billDate) / 1000), equalTo: now, toGranularity: .month) }
+        return store.bills.filter { !$0.deleted && $0.type == "expense" &&
+            cal.isDate(Date(timeIntervalSince1970: TimeInterval($0.billDate) / 1000), inSameDayAs: Date()) }
             .reduce(0) { $0 + $1.amount }
     }
 
-    private var checkinCount: Int {
-        store.checkins.filter { !$0.deleted }.count
+    /// 连续打卡天数（从今天往前数，今天未打卡不断档）
+    private var streakDays: Int {
+        let cal = Calendar.current
+        let set = Set(store.checkins.filter { !$0.deleted }.map { $0.date })
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        var days = 0
+        var cursor = Date()
+        if !set.contains(f.string(from: cursor)) {
+            cursor = cal.date(byAdding: .day, value: -1, to: cursor) ?? cursor
+        }
+        while set.contains(f.string(from: cursor)) {
+            days += 1
+            cursor = cal.date(byAdding: .day, value: -1, to: cursor) ?? cursor
+        }
+        return days
     }
 
     private var medCount: Int {
         store.medboxes.filter { !$0.deleted }.count
-    }
-
-    private func subtitle(_ m: Module) -> String {
-        switch m {
-        case .notes:
-            return "\(store.notes.filter { !$0.deleted }.count) 篇笔记"
-        case .todos:
-            return "\(openTodos) 项待完成"
-        case .bills:
-            return "\(store.bills.filter { !$0.deleted }.count) 笔记录"
-        case .checkin:
-            return "累计打卡 \(checkinCount) 次"
-        case .medbox:
-            let active = store.medboxes.filter { !$0.deleted }
-            let expired = active.filter { $0.expiryStatus == .expired }.count
-            let expiring = active.filter { $0.expiryStatus == .expiring }.count
-            if expired > 0 { return "已过期 \(expired) · 临期 \(expiring)" }
-            if expiring > 0 { return "临期 \(expiring) 种 · 共 \(active.count) 种" }
-            return "常备 \(active.count) 种药"
-        case .tools:
-            return "计算与换算"
-        case .stats:
-            return "数据看板"
-        }
     }
 
     private var searchResults: some View {
@@ -337,73 +304,6 @@ struct HomeView: View {
         case .tools: ToolsView()
         case .stats: StatsView()
         }
-    }
-
-    private var fab: some View {
-        Button { showNewMenu = true } label: {
-            Image(systemName: "plus")
-                .font(.title2.weight(.semibold))
-                .foregroundColor(.white)
-                .frame(width: 56, height: 56)
-                .background(
-                    Circle().fill(
-                        LinearGradient(
-                            colors: [Color(red: 0.16, green: 0.85, blue: 0.48), Color(red: 0.03, green: 0.65, blue: 0.35)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                )
-                .shadow(color: Color(red: 0.03, green: 0.65, blue: 0.35).opacity(0.35), radius: 8, x: 0, y: 4)
-        }
-        .padding(20)
-    }
-}
-
-/// 底部新建菜单：从底部滑出的原生样式操作列表
-struct NewMenuSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let onPick: (NewItemType) -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Text("新建")
-                .font(.headline)
-                .padding(.top, 22)
-                .padding(.bottom, 6)
-            menuRow("note.text", "新建笔记", .blue) { onPick(.note) }
-            Divider().padding(.leading, 72)
-            menuRow("checklist", "新建待办", .orange) { onPick(.todo) }
-            Divider().padding(.leading, 72)
-            menuRow("yensign.circle", "记一笔", .green) { onPick(.bill) }
-            Divider().padding(.leading, 72)
-            menuRow("pills", "记录药品", .red) { onPick(.medbox) }
-            Spacer(minLength: 0)
-        }
-        .presentationDetents([.height(310)])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func menuRow(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
-        Button {
-            dismiss()
-            action()
-        } label: {
-            HStack(spacing: 14) {
-                IconBadge(symbol: symbol, color: color, size: 40, corner: 11)
-                Text(title)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundColor(Color(.systemGray3))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }
 

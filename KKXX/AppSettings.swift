@@ -31,6 +31,13 @@ final class AppSettings: ObservableObject {
     @Published var theme: String {          // system / light / dark
         didSet { defaults.set(theme, forKey: "kkxx.theme") }
     }
+    @Published var nickname: String {
+        didSet { defaults.set(nickname, forKey: "kkxx.nickname") }
+    }
+    /// 头像图片数据（小图，UserDefaults 直存）
+    @Published var avatarData: Data {
+        didSet { defaults.set(avatarData, forKey: "kkxx.avatarData") }
+    }
 
     private init() {
         serverURL = defaults.string(forKey: "kkxx.serverURL") ?? "http://app.puaaa.cn"
@@ -41,6 +48,8 @@ final class AppSettings: ObservableObject {
         syncOnLaunch = defaults.object(forKey: "kkxx.syncOnLaunch") as? Bool ?? true
         fingerprintLock = defaults.object(forKey: "kkxx.fingerprintLock") as? Bool ?? false
         theme = defaults.string(forKey: "kkxx.theme") ?? "system"
+        nickname = defaults.string(forKey: "kkxx.nickname") ?? ""
+        avatarData = defaults.data(forKey: "kkxx.avatarData") ?? Data()
     }
 
     var normalizedServerURL: String {
