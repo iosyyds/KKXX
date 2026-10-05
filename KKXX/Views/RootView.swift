@@ -41,8 +41,8 @@ struct MainTabView: View {
 
     @EnvironmentObject var settings: AppSettings
     @State private var tab: Tab = .home
+    @State private var lastTap: (Tab, Date) = (.home, .distantPast)
     private let feedback = UISelectionFeedbackGenerator()
-    private var lastTap: (Tab, Date) = (.home, .distantPast)
 
     var body: some View {
         Group {
