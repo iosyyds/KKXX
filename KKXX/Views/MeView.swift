@@ -47,22 +47,6 @@ struct MeView: View {
                     }
                 }
 
-                Section("设置") {
-                    HStack(spacing: 12) {
-                        IconBadge(symbol: "paintbrush.fill", color: .blue, size: 30, corner: 9)
-                        Picker("主题", selection: $settings.theme) {
-                            Text("跟随").tag("system")
-                            Text("浅色").tag("light")
-                            Text("深色").tag("dark")
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    HStack(spacing: 12) {
-                        IconBadge(symbol: "faceid", color: .purple, size: 30, corner: 9)
-                        Toggle("指纹 / 面容解锁", isOn: $settings.fingerprintLock)
-                    }
-                }
-
                 Section {
                     HStack(spacing: 14) {
                         ZStack {

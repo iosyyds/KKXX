@@ -1,21 +1,52 @@
 import SwiftUI
 
-/// 主界面：底部悬浮毛玻璃 Tab 导航（微信式）
+extension Notification.Name {
+    /// 双击底部 Tab 时发送，各列表页监听并滚动到顶部
+    static let scrollToTop = Notification.Name("KKXXScrollToTop")
+}
+
+/// 主界面：液态玻璃悬浮 Tab 栏（爱奇艺式）
 struct MainTabView: View {
     enum Tab: Int, CaseIterable {
         case home, notes, todos, bills, me
+
+        var title: String {
+            switch self {
+            case .home: return "首页"
+            case .notes: return "笔记"
+            case .todos: return "待办"
+            case .bills: return "账单"
+            case .me: return "我的"
+            }
+        }
+        var outline: String {
+            switch self {
+            case .home: return "house"
+            case .notes: return "note.text"
+            case .todos: return "checklist"
+            case .bills: return "creditcard"
+            case .me: return "person"
+            }
+        }
+        var filled: String {
+            switch self {
+            case .home: return "house.fill"
+            case .notes: return "note.text"
+            case .todos: return "checklist"
+            case .bills: return "creditcard.fill"
+            case .me: return "person.fill"
+            }
+        }
     }
 
     @EnvironmentObject var settings: AppSettings
-    @State private var unlocked = false
     @State private var tab: Tab = .home
     private let feedback = UISelectionFeedbackGenerator()
+    private var lastTap: (Tab, Date) = (.home, .distantPast)
 
     var body: some View {
         Group {
-            if settings.fingerprintLock && !unlocked {
-                LockView(unlocked: $unlocked)
-            } else if settings.isLoggedIn {
+            if settings.isLoggedIn {
                 tabBody
             } else {
                 AuthView()
@@ -29,14 +60,13 @@ struct MainTabView: View {
 
     private var tabBody: some View {
         ZStack(alignment: .bottom) {
-            Group {
-                switch tab {
-                case .home: HomeView(currentTab: $tab)
-                case .notes: NotesView()
-                case .todos: TodosView()
-                case .bills: BillsView()
-                case .me: MeView()
-                }
+            // 常驻所有 Tab，切换保留页面状态
+            ZStack {
+                tabContent(.home)
+                tabContent(.notes)
+                tabContent(.todos)
+                tabContent(.bills)
+                tabContent(.me)
             }
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 84) }
 
@@ -44,14 +74,27 @@ struct MainTabView: View {
         }
     }
 
-    /// 悬浮毛玻璃胶囊 Tab 栏
+    @ViewBuilder
+    private func tabContent(_ t: Tab) -> some View {
+        Group {
+            switch t {
+            case .home: HomeView(currentTab: $tab)
+            case .notes: NotesView()
+            case .todos: TodosView()
+            case .bills: BillsView()
+            case .me: MeView()
+            }
+        }
+        .opacity(tab == t ? 1 : 0)
+        .allowsHitTesting(tab == t)
+    }
+
+    /// 液态玻璃悬浮胶囊 Tab 栏
     private var floatingTabBar: some View {
         HStack(spacing: 0) {
-            tabButton(.home, symbol: "house", title: "首页")
-            tabButton(.notes, symbol: "note.text", title: "笔记")
-            tabButton(.todos, symbol: "checklist", title: "待办")
-            tabButton(.bills, symbol: "creditcard", title: "账单")
-            tabButton(.me, symbol: "person", title: "我的")
+            ForEach(Tab.allCases, id: \.rawValue) { t in
+                tabButton(t)
+            }
         }
         .padding(.horizontal, 6)
         .frame(height: 62)
@@ -63,22 +106,29 @@ struct MainTabView: View {
         .shadow(color: .black.opacity(0.14), radius: 18, x: 0, y: 8)
     }
 
-    private func tabButton(_ t: Tab, symbol: String, title: String) -> some View {
+    private func tabButton(_ t: Tab) -> some View {
         let selected = tab == t
         return Button {
             feedback.selectionChanged()
+            // 双击当前 Tab：回顶部
+            if tab == t, Date().timeIntervalSince(lastTap.1) < 0.35 {
+                NotificationCenter.default.post(name: .scrollToTop, object: nil, userInfo: ["tab": t.rawValue])
+                lastTap = (t, .distantPast)
+                return
+            }
+            lastTap = (t, Date())
             if tab != t {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) { tab = t }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) { tab = t }
             }
         } label: {
             VStack(spacing: 3) {
-                Image(systemName: symbol)
+                Image(systemName: selected ? t.filled : t.outline)
                     .font(.system(size: 20, weight: selected ? .semibold : .regular))
-                    .scaleEffect(selected ? 1.0 : 0.92)
-                Text(title)
+                Text(t.title)
                     .font(.system(size: 10, weight: selected ? .semibold : .regular))
             }
             .foregroundColor(selected ? brandGreen : Color(.tertiaryLabel))
+            .scaleEffect(selected ? 1.0 : 0.94)
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
@@ -86,7 +136,7 @@ struct MainTabView: View {
     }
 }
 
-/// 启动分流（锁 / 主界面 / 登录）
+/// 启动分流（主界面 / 登录）
 struct RootView: View {
     var body: some View {
         MainTabView()

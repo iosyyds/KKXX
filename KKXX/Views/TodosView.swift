@@ -16,23 +16,30 @@ struct TodosView: View {
             if visible.isEmpty {
                 EmptyHint(icon: "checklist", title: "暂无待办", subtitle: "点右上角新增，或从首页 + 新建", color: .orange)
             } else {
-                List {
-                    ForEach(visible) { todo in
-                        TodoRow(todo: todo) {
-                            var t = todo
-                            t.done.toggle()
-                            store.upsert(t)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture { editing = todo }
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) { store.softDeleteTodo(id: todo.id) } label: {
-                                Label("删除", systemImage: "trash")
+                ScrollViewReader { proxy in
+                    List {
+                        ForEach(visible) { todo in
+                            TodoRow(todo: todo) {
+                                var t = todo
+                                t.done.toggle()
+                                store.upsert(t)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture { editing = todo }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) { store.softDeleteTodo(id: todo.id) } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
                             }
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { n in
+                        if (n.userInfo?["tab"] as? Int) == 2 {
+                            withAnimation { proxy.scrollTo(visible.first?.id) }
+                        }
+                    }
                 }
-                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("待办")

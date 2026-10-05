@@ -13,18 +13,25 @@ struct NotesView: View {
             if visible.isEmpty {
                 EmptyHint(icon: "note.text", title: "暂无笔记", subtitle: "点右上角新建，随手记录灵感", color: .blue)
             } else {
-                List {
-                    ForEach(visible) { note in
-                        Button { editing = note } label: { NoteRow(note: note) }
-                            .buttonStyle(.plain)
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) { store.softDeleteNote(id: note.id) } label: {
-                                    Label("删除", systemImage: "trash")
+                ScrollViewReader { proxy in
+                    List {
+                        ForEach(visible) { note in
+                            Button { editing = note } label: { NoteRow(note: note) }
+                                .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) { store.softDeleteNote(id: note.id) } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
                                 }
-                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { n in
+                        if (n.userInfo?["tab"] as? Int) == 1 {
+                            withAnimation { proxy.scrollTo(visible.first?.id) }
+                        }
                     }
                 }
-                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("笔记")

@@ -26,30 +26,37 @@ struct BillsView: View {
             if store.bills.filter({ !$0.deleted }).isEmpty {
                 EmptyHint(icon: "yensign.circle", title: "还没有账单", subtitle: "点右上角或首页 + 记一笔", color: brandGreen)
             } else {
-                List {
-                    Section {
-                        HStack(spacing: 12) {
-                            StatCell(label: "收入", value: yuan(income), color: .green, symbol: "arrow.down.circle.fill")
-                            StatCell(label: "支出", value: yuan(expense), color: .orange, symbol: "arrow.up.circle.fill")
-                            StatCell(label: "结余", value: yuan(income - expense), color: .primary, symbol: "equal.circle.fill")
+                ScrollViewReader { proxy in
+                    List {
+                        Section {
+                            HStack(spacing: 12) {
+                                StatCell(label: "收入", value: yuan(income), color: .green, symbol: "arrow.down.circle.fill")
+                                StatCell(label: "支出", value: yuan(expense), color: .orange, symbol: "arrow.up.circle.fill")
+                                StatCell(label: "结余", value: yuan(income - expense), color: .primary, symbol: "equal.circle.fill")
+                            }
+                            .padding(.vertical, 2)
                         }
-                        .padding(.vertical, 2)
-                    }
-                    .listRowBackground(Color.clear)
+                        .listRowBackground(Color.clear)
 
-                    Section("明细") {
-                        ForEach(visible) { bill in
-                            Button { editing = bill } label: { BillRow(bill: bill) }
-                                .buttonStyle(.plain)
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) { store.softDeleteBill(id: bill.id) } label: {
-                                        Label("删除", systemImage: "trash")
+                        Section("明细") {
+                            ForEach(visible) { bill in
+                                Button { editing = bill } label: { BillRow(bill: bill) }
+                                    .buttonStyle(.plain)
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) { store.softDeleteBill(id: bill.id) } label: {
+                                            Label("删除", systemImage: "trash")
+                                        }
                                     }
-                                }
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { n in
+                        if (n.userInfo?["tab"] as? Int) == 3 {
+                            withAnimation { proxy.scrollTo(visible.first?.id) }
                         }
                     }
                 }
-                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("记账")
