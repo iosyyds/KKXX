@@ -98,6 +98,15 @@ struct HomeView: View {
             }
             .task {
                 store.syncOnLaunchIfNeeded()
+                // 启动时拉取云端头像/昵称（多设备同步）
+                if settings.isLoggedIn {
+                    if let p = try? await SyncService().fetchProfile(settings: settings) {
+                        settings.nickname = p.nickname
+                        if !p.avatar.isEmpty, let d = Data(base64Encoded: p.avatar) {
+                            settings.avatarData = d
+                        }
+                    }
+                }
                 await checkAppInfo()
             }
         }
