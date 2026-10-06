@@ -102,7 +102,7 @@ struct MeView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("KKXX")
                                 .font(.subheadline.weight(.semibold))
-                            Text("版本 1.1.0 · 数据云端保存，跟随账号")
+                            Text("版本 \((Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.0") · 数据云端保存，跟随账号")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
