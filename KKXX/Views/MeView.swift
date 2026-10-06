@@ -306,8 +306,8 @@ struct ProfileEditView: View {
         guard let item else { return }
         if let data = try? await item.loadTransferable(type: Data.self),
            let img = UIImage(data: data) {
-            let resized = img.preparingThumbnail(of: CGSize(width: 256, height: 256)) ?? img
-            settings.avatarData = (resized.pngData() ?? data)
+            let resized = img.preparingThumbnail(of: CGSize(width: 128, height: 128)) ?? img
+            settings.avatarData = (resized.jpegData(compressionQuality: 0.5) ?? data)
         }
     }
 }

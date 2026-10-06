@@ -93,7 +93,7 @@ struct HomeView: View {
                 )
             ) {
                 Button("立即更新") {
-                    if let url = URL(string: "https://aka.doubaocdn.com/s/oGto4y66lp") {
+                    if let url = URL(string: "https://aka.doubaocdn.com/s/wLU2ztVw6e") {
                         UIApplication.shared.open(url)
                     }
                     remoteVersion = nil
@@ -128,7 +128,8 @@ struct HomeView: View {
             if info.announcement.enabled && !info.announcement.title.isEmpty {
                 announcement = info.announcement
             }
-            if info.appVersion != "1.1.0" {
+            let localVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.0"
+            if info.appVersion.compare(localVersion, options: .numeric) == .orderedDescending {
                 remoteVersion = info.appVersion
                 updateNote = info.updateNote
             }
