@@ -122,6 +122,18 @@ struct MeView: View {
             }
             .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.large)
+            .task {
+                guard settings.isLoggedIn else { return }
+                if let p = try? await SyncService().fetchProfile(settings: settings) {
+                    settings.nickname = p.nickname
+                    if !p.avatar.isEmpty, let d = Data(base64Encoded: p.avatar) {
+                        settings.avatarData = d
+                    }
+                }
+                if let me = try? await SyncService().myKx(settings: settings) {
+                    settings.myKxNumber = (me["kx"] as? String) ?? ""
+                }
+            }
             .confirmationDialog(store.pendingCount > 0
                                 ? "还有 \(store.pendingCount) 条数据未同步到云端，退出后可能丢失。仍要退出？"
                                 : "退出登录？",
