@@ -75,6 +75,12 @@ struct FriendsListView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("好友")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                }
+            }
             .navigationDestination(for: String.self) { route in
                 if route.hasPrefix("chat:") {
                     ChatView(kx: String(route.dropFirst(5)), friendNick: friendName(kx: String(route.dropFirst(5))))
@@ -168,6 +174,12 @@ struct AddFriendView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("添加好友")
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("完成") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+            }
+        }
     }
 
     private func search() {
