@@ -33,18 +33,25 @@ struct MeView: View {
                 }
 
                 Section {
-                    HStack {
-                        Label("我的 KX 号", systemImage: "number.circle")
-                        Spacer()
-                        Text(settings.myKxNumber)
-                            .font(.system(.subheadline, design: .monospaced)).bold()
-                            .foregroundColor(.green)
-                        Button {
-                            UIPasteboard.general.string = settings.myKxNumber
-                        } label: {
-                            Image(systemName: "doc.on.doc")
+                    Button {
+                        UIPasteboard.general.string = settings.myKxNumber
+                    } label: {
+                        HStack(spacing: 10) {
+                            Text("KX")
+                                .font(.caption.weight(.bold))
+                                .foregroundColor(.white)
+                                .frame(width: 34, height: 34)
+                                .background(Color.green.gradient)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            Text("KX号：\(settings.myKxNumber)")
+                                .font(.subheadline)
+                            Spacer()
+                            if !settings.myKxNumber.isEmpty {
+                                Image(systemName: "doc.on.doc").font(.footnote).foregroundColor(.secondary)
+                            }
                         }
                     }
+                    .foregroundColor(.primary)
                     NavigationLink { FriendsListView() } label: {
                         Label("好友", systemImage: "person.2")
                     }
