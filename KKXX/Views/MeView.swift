@@ -245,7 +245,9 @@ struct ProfileEditView: View {
                 Button(saving ? "保存中…" : "完成") {
                     let nick = nickname.trimmingCharacters(in: .whitespaces)
                     settings.nickname = nick
-                    let avatarB64 = settings.avatarData.base64EncodedString()
+                    // 头像太大则不传，避免 POST 超限；新选的头像已压到 128 JPEG 很小
+                    var avatarB64 = settings.avatarData.base64EncodedString()
+                    if avatarB64.count > 50000 { avatarB64 = "" }
                     let s = settings
                     saving = true
                     Task {
