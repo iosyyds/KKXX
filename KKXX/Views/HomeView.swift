@@ -100,7 +100,7 @@ struct HomeView: View {
                 }
                 Button("以后再说", role: .cancel) { remoteVersion = nil }
             } message: {
-                Text(updateNote.isEmpty ? "点击立即更新，将在 Safari 中安装新版，原有数据不会丢失。" : updateNote)
+                Text(updateNote.isEmpty ? "将在 Safari 中下载新版 IPA，下载后用 AltStore/Sideloadly 安装，数据不丢失。" : updateNote)
             }
             .task {
                 store.syncOnLaunchIfNeeded()
