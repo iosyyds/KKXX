@@ -27,8 +27,8 @@ targets:
       path: KKXX/Info.plist
       properties:
         CFBundleDisplayName: KKXX
-        CFBundleShortVersionString: "1.2.0"
-        CFBundleVersion: "3"
+        CFBundleShortVersionString: "1.2.1"
+        CFBundleVersion: "4"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
