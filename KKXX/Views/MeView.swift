@@ -36,13 +36,11 @@ struct MeView: View {
                     Button {
                         UIPasteboard.general.string = settings.myKxNumber
                     } label: {
-                        HStack(spacing: 10) {
-                            Text("KX")
-                                .font(.caption.weight(.bold))
-                                .foregroundColor(.white)
-                                .frame(width: 34, height: 34)
-                                .background(Color.green.gradient)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        HStack(spacing: 12) {
+                            Image(systemName: "number")
+                                .font(.system(size: 22))
+                                .foregroundColor(.blue)
+                                .frame(width: 30, height: 30)
                             Text("KX号：\(settings.myKxNumber)")
                                 .font(.subheadline)
                             Spacer()
