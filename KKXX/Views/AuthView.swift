@@ -186,7 +186,8 @@ struct AuthView: View {
                     settings.avatarData = d
                 }
             }
-            // 登录成功后同步：先上传本机变更（如有），再以服务器数据合并（数据跟随账号）
+            // 登录成功后同步：先拉全量云端数据（数据跟随账号），再上传本机变更
+            await store.syncNow(mode: .pullOnly)
             await store.syncNow(mode: .normal)
         } catch {
             // 失败时先检测服务器链接，区分「链接失败」与「账号/业务错误」

@@ -45,6 +45,18 @@ struct MeView: View {
                     NavigationLink { StatsView() } label: {
                         Label("数据总览", systemImage: "chart.pie")
                     }
+                    HStack {
+                        Label(store.syncStatus, systemImage: store.isSyncing ? "arrow.triangle.2.circlepath" : "cloud")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button {
+                            Task { await store.syncNow(mode: .normal) }
+                        } label: {
+                            Text("立即同步")
+                                .font(.footnote.weight(.medium))
+                        }
+                    }
                 }
 
                 Section {
