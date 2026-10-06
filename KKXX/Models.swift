@@ -111,9 +111,9 @@ struct TodoItem: Syncable {
         id = try c.decode(String.self, forKey: .id)
         title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
         // done 服务器可能返回 true/false 或 0/1 数字
-        if let b = try? c.decodeIfPresent(Bool.self, forKey: .done), let b = b {
+        if let b = try? c.decodeIfPresent(Bool.self, forKey: .done) {
             done = b
-        } else if let i = try? c.decodeIfPresent(Int.self, forKey: .done), let i = i {
+        } else if let i = try? c.decodeIfPresent(Int.self, forKey: .done) {
             done = i != 0
         } else {
             done = false
@@ -171,9 +171,9 @@ struct Bill: Syncable {
         id = try c.decode(String.self, forKey: .id)
         type = try c.decodeIfPresent(String.self, forKey: .type) ?? "expense"
         // amount 服务器可能返回字符串 "11.00" 或数字，两种都兼容
-        if let d = try? c.decodeIfPresent(Double.self, forKey: .amount), let d = d {
+        if let d = try? c.decodeIfPresent(Double.self, forKey: .amount) {
             amount = d
-        } else if let s = try? c.decodeIfPresent(String.self, forKey: .amount), let s = s {
+        } else if let s = try? c.decodeIfPresent(String.self, forKey: .amount) {
             amount = Double(s) ?? 0
         } else {
             amount = 0
