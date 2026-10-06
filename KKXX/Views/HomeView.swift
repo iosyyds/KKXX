@@ -85,23 +85,6 @@ struct HomeView: View {
             } message: {
                 Text(announcement?.content ?? "")
             }
-            .alert(
-                "发现新版本 v\(remoteVersion ?? "")",
-                isPresented: Binding(
-                    get: { remoteVersion != nil },
-                    set: { if !$0 { remoteVersion = nil } }
-                )
-            ) {
-                Button("立即更新") {
-                    if let url = URL(string: "https://gh-proxy.com/https://github.com/iosyyds/KKXX/releases/latest/download/KKXX.ipa") {
-                        UIApplication.shared.open(url)
-                    }
-                    remoteVersion = nil
-                }
-                Button("以后再说", role: .cancel) { remoteVersion = nil }
-            } message: {
-                Text(updateNote.isEmpty ? "将在 Safari 中下载新版 IPA，下载后用 AltStore/Sideloadly 安装，数据不丢失。" : updateNote)
-            }
             .task {
                 store.syncOnLaunchIfNeeded()
                 // 启动时拉取云端头像/昵称（多设备同步）
