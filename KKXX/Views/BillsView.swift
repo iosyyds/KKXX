@@ -129,3 +129,31 @@ struct BillsView: View {
     private func prevMonth() { month = calendar.date(byAdding: .month, value: -1, to: month) ?? month }
     private func nextMonth() { month = calendar.date(byAdding: .month, value: 1, to: month) ?? month }
 }
+
+private struct BillRow: View {
+    let bill: Bill
+    var body: some View {
+        HStack(spacing: 14) {
+            IconBadge(
+                symbol: bill.type == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
+                color: bill.type == "income" ? .green : .orange,
+                size: 42, corner: 12
+            )
+            VStack(alignment: .leading, spacing: 3) {
+                Text(bill.category.isEmpty ? (bill.remark.isEmpty ? "未分类" : bill.remark) : bill.category)
+                    .font(.subheadline.weight(.medium))
+                Text(bill.remark.isEmpty ? shortDate(bill.billDate) : bill.remark)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            (Text(bill.type == "income" ? "+" : "-")
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
+             + Text(yuan(bill.amount))
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(bill.type == "income" ? Color.green : Color.orange))
+        }
+        .padding(.vertical, 4)
+    }
+}
