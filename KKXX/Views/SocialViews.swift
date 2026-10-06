@@ -75,6 +75,7 @@ struct FriendsListView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("好友")
+            .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 100) }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -174,6 +175,7 @@ struct AddFriendView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("添加好友")
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 100) }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()

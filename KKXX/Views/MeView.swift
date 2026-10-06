@@ -8,6 +8,7 @@ struct MeView: View {
 
     @State private var confirmLogout = false
     @State private var exiting = false
+    @State private var pendingRequests = 0
 
     private var noteCount: Int { store.notes.filter { !$0.deleted }.count }
     private var openTodoCount: Int { store.todos.filter { !$0.deleted && !$0.done }.count }
@@ -51,7 +52,17 @@ struct MeView: View {
                     }
                     .foregroundColor(.primary)
                     NavigationLink { FriendsListView() } label: {
-                        Label("好友", systemImage: "person.2")
+                        HStack {
+                            Label("好友", systemImage: "person.2")
+                            Spacer()
+                            if pendingRequests > 0 {
+                                Text("\(pendingRequests)")
+                                    .font(.caption2).bold()
+                                    .foregroundColor(.white)
+                                    .frame(width: 20, height: 20)
+                                    .background(Color.red).clipShape(Circle())
+                            }
+                        }
                     }
                 }
 
@@ -137,6 +148,9 @@ struct MeView: View {
                 }
                 if let me = try? await SyncService().myKx(settings: settings) {
                     settings.myKxNumber = (me["kx"] as? String) ?? ""
+                }
+                if let reqs = try? await SyncService().listRequests(settings: settings) {
+                    pendingRequests = reqs.count
                 }
             }
             .confirmationDialog(store.pendingCount > 0
