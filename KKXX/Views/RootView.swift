@@ -74,7 +74,7 @@ struct MainTabView: View {
                 let unread = (f["unread"] as? Int) ?? 0
                 if unread > 0, let kx = f["kx_number"] as? String {
                     let nick = (f["nickname"] as? String).flatMap { $0.isEmpty ? kx : $0 } ?? kx
-                    let content = try? await SyncService().pullMessages(kx: kx, after: 0, settings: settings)
+                    let content = try? await SyncService().pullMessages(withKx: kx, afterTs: 0, settings: settings)
                     let lastText = (content?.last?["content"] as? String) ?? "新消息"
                     notify(title: nick, body: lastText)
                 }
