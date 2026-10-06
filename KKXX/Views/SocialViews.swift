@@ -294,7 +294,7 @@ struct ChatView: View {
                     .background(Color(red: 0.85, green: 0.96, blue: 0.85))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                     .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color(red: 0.75, green: 0.9, blue: 0.75), lineWidth: 0.5))
-                avatarCircle(base64: settings.avatarData?.base64EncodedString() ?? "", size: 40)
+                avatarCircle(base64: settings.avatarData.base64EncodedString(), size: 40)
             } else {
                 avatarCircle(base64: "", size: 40)
                 Text(content)
