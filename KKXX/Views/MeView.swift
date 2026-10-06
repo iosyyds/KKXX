@@ -211,6 +211,8 @@ struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pickerItem: PhotosPickerItem?
     @State private var nickname = ""
+    @State private var saving = false
+    @State private var saveError = ""
 
     var body: some View {
         Form {
@@ -240,15 +242,29 @@ struct ProfileEditView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("完成") {
+                Button(saving ? "保存中…" : "完成") {
                     let nick = nickname.trimmingCharacters(in: .whitespaces)
                     settings.nickname = nick
                     let avatarB64 = settings.avatarData.base64EncodedString()
                     let s = settings
-                    Task { try? await SyncService().updateProfile(nickname: nick, avatarB64: avatarB64, settings: s) }
-                    dismiss()
-                }.fontWeight(.semibold)
+                    saving = true
+                    Task {
+                        do {
+                            try await SyncService().updateProfile(nickname: nick, avatarB64: avatarB64, settings: s)
+                            saving = false
+                            dismiss()
+                        } catch {
+                            saving = false
+                            saveError = (error as NSError).localizedDescription
+                        }
+                    }
+                }.fontWeight(.semibold).disabled(saving)
             }
+        }
+        .alert("保存失败", isPresented: .constant(!saveError.isEmpty)) {
+            Button("好", role: .cancel) { saveError = "" }
+        } message: {
+            Text(saveError)
         }
         .onAppear { nickname = settings.nickname }
         .onChange(of: pickerItem) { item in
