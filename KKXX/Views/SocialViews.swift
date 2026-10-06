@@ -247,6 +247,7 @@ struct ChatView: View {
             }
             .padding()
         }
+        .padding(.bottom, 90)
         .navigationTitle("\(friendNick)（KX:\(kx)）")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { startPoll() }
