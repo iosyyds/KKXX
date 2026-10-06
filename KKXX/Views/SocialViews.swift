@@ -70,6 +70,9 @@ struct FriendsListView: View {
                                 }
                             }
                         }
+                        .swipeActions {
+                            Button("删除", role: .destructive) { deleteFriend(i) }
+                        }
                     }
                 }
             }
@@ -119,6 +122,14 @@ struct FriendsListView: View {
         guard let id = requests[i]["id"] as? Int else { return }
         Task {
             _ = try? await SyncService().respondRequest(id: id, accept: false, settings: settings)
+            await reload()
+        }
+    }
+
+    private func deleteFriend(_ i: Int) {
+        guard let kx = friends[i]["kx_number"] as? String else { return }
+        Task {
+            _ = try? await SyncService().deleteFriend(kx: kx, settings: settings)
             await reload()
         }
     }

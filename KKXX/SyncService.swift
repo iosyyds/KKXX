@@ -382,6 +382,12 @@ struct SyncService {
         return list
     }
 
+    /// 删除好友
+    func deleteFriend(kx: String, settings: AppSettings) async throws {
+        let r = try await postForm("friend", ["action": "delete", "to_kx": kx], settings: settings)
+        guard (r["code"] as? Int) == 0 else { throw SyncError.network((r["msg"] as? String) ?? "删除失败") }
+    }
+
     /// 发消息
     func sendMessage(toKx: String, text: String, settings: AppSettings) async throws {
         let r = try await postForm("chat", ["action": "send", "to_kx": toKx, "text": text], settings: settings)
