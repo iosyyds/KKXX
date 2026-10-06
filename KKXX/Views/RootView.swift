@@ -70,7 +70,9 @@ struct MainTabView: View {
             }
             .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 120) }
 
-            floatingTabBar
+            if !settings.tabBarHidden {
+                floatingTabBar
+            }
         }
     }
 

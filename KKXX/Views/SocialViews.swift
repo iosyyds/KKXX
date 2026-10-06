@@ -252,8 +252,14 @@ struct ChatView: View {
         .padding(.bottom, 90)
         .navigationTitle("\(friendNick)（KX:\(kx)）")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { startPoll() }
-        .onDisappear { timer?.invalidate() }
+        .onAppear {
+            settings.tabBarHidden = true
+            startPoll()
+        }
+        .onDisappear {
+            settings.tabBarHidden = false
+            timer?.invalidate()
+        }
     }
 
     private func bubble(_ m: [String: Any]) -> some View {

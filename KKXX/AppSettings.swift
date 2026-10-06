@@ -41,6 +41,7 @@ final class AppSettings: ObservableObject {
     @Published var myKxNumber: String {
         didSet { defaults.set(myKxNumber, forKey: "kkxx.myKx") }
     }
+    @Published var tabBarHidden: Bool = false
 
     private init() {
         serverURL = defaults.string(forKey: "kkxx.serverURL") ?? "http://app.puaaa.cn"
