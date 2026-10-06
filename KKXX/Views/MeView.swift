@@ -32,6 +32,24 @@ struct MeView: View {
                     }
                 }
 
+                Section {
+                    HStack {
+                        Label("我的 KX 号", systemImage: "number.circle")
+                        Spacer()
+                        Text(settings.myKxNumber)
+                            .font(.system(.subheadline, design: .monospaced)).bold()
+                            .foregroundColor(.green)
+                        Button {
+                            UIPasteboard.general.string = settings.myKxNumber
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                        }
+                    }
+                    NavigationLink { FriendsListView() } label: {
+                        Label("好友", systemImage: "person.2")
+                    }
+                }
+
                 Section("我的数据") {
                     HStack(spacing: 0) {
                         dataCell("\(noteCount)", "笔记")

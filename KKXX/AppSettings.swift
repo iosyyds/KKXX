@@ -38,6 +38,9 @@ final class AppSettings: ObservableObject {
     @Published var avatarData: Data {
         didSet { defaults.set(avatarData, forKey: "kkxx.avatarData") }
     }
+    @Published var myKxNumber: String {
+        didSet { defaults.set(myKxNumber, forKey: "kkxx.myKx") }
+    }
 
     private init() {
         serverURL = defaults.string(forKey: "kkxx.serverURL") ?? "http://app.puaaa.cn"
@@ -49,6 +52,7 @@ final class AppSettings: ObservableObject {
         fingerprintLock = defaults.object(forKey: "kkxx.fingerprintLock") as? Bool ?? false
         theme = defaults.string(forKey: "kkxx.theme") ?? "system"
         nickname = defaults.string(forKey: "kkxx.nickname") ?? ""
+        myKxNumber = defaults.string(forKey: "kkxx.myKx") ?? ""
         avatarData = defaults.data(forKey: "kkxx.avatarData") ?? Data()
     }
 

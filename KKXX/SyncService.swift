@@ -319,6 +319,83 @@ struct SyncService {
         return envelope.code == 0 && (envelope.data?.verified ?? false)
     }
 
+    // MARK: - 好友 / 聊天
+
+    private func postForm(_ path: String, _ body: [String: Any], settings: AppSettings) async throws -> [String: Any] {
+        let base = settings.normalizedServerURL
+        guard !base.isEmpty, let url = URL(string: "\(base)/api/\(path).php") else { throw SyncError.badURL }
+        var req = request(url, token: settings.authToken)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        req.httpBody = body.map { "\($0)=\(urlencode("\($1)"))" }.joined(separator: "&").data(using: .utf8)
+        let (data, resp) = try await session.data(for: req)
+        try validate(resp)
+        guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw SyncError.network("bad json") }
+        return obj
+    }
+
+    private func urlencode(_ s: String) -> String {
+        s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? s
+    }
+
+    /// 我的 KX 号
+    func myKx(settings: AppSettings) async throws -> [String: Any] {
+        let r = try await postForm("friend", ["action": "me"], settings: settings)
+        guard (r["code"] as? Int) == 0, let d = r["data"] as? [String: Any] else { throw SyncError.network((r["msg"] as? String) ?? "错误") }
+        return d
+    }
+
+    /// 搜索 KX 号
+    func searchKx(_ kx: String, settings: AppSettings) async throws -> [String: Any] {
+        let r = try await postForm("friend", ["action": "search", "kx": kx], settings: settings)
+        guard (r["code"] as? Int) == 0, let d = r["data"] as? [String: Any] else { throw SyncError.network((r["msg"] as? String) ?? "未找到用户") }
+        return d
+    }
+
+    /// 发好友申请
+    func sendRequest(toKx: String, message: String, settings: AppSettings) async throws -> String {
+        let r = try await postForm("friend", ["action": "request", "to_kx": toKx, "message": message], settings: settings)
+        guard (r["code"] as? Int) == 0 else { throw SyncError.network((r["msg"] as? String) ?? "发送失败") }
+        return r["msg"] as? String ?? "已发送"
+    }
+
+    /// 收到的申请列表
+    func listRequests(settings: AppSettings) async throws -> [[String: Any]] {
+        let r = try await postForm("friend", ["action": "requests"], settings: settings)
+        guard (r["code"] as? Int) == 0, let d = r["data"] as? [String: Any],
+              let list = d["list"] as? [[String: Any]] else { return [] }
+        return list
+    }
+
+    /// 处理申请
+    func respondRequest(id: Int, accept: Bool, settings: AppSettings) async throws -> String {
+        let r = try await postForm("friend", ["action": "respond", "request_id": id, "accept": accept ? "1" : "0"], settings: settings)
+        guard (r["code"] as? Int) == 0 else { throw SyncError.network((r["msg"] as? String) ?? "操作失败") }
+        return r["msg"] as? String ?? "ok"
+    }
+
+    /// 好友列表
+    func friendList(settings: AppSettings) async throws -> [[String: Any]] {
+        let r = try await postForm("friend", ["action": "list"], settings: settings)
+        guard (r["code"] as? Int) == 0, let d = r["data"] as? [String: Any],
+              let list = d["list"] as? [[String: Any]] else { return [] }
+        return list
+    }
+
+    /// 发消息
+    func sendMessage(toKx: String, text: String, settings: AppSettings) async throws {
+        let r = try await postForm("chat", ["action": "send", "to_kx": toKx, "text": text], settings: settings)
+        guard (r["code"] as? Int) == 0 else { throw SyncError.network((r["msg"] as? String) ?? "发送失败") }
+    }
+
+    /// 拉消息
+    func pullMessages(withKx: String, afterTs: Int64, settings: AppSettings) async throws -> [[String: Any]] {
+        let r = try await postForm("chat", ["action": "pull", "with_kx": withKx, "after_ts": afterTs], settings: settings)
+        guard (r["code"] as? Int) == 0, let d = r["data"] as? [String: Any],
+              let list = d["list"] as? [[String: Any]] else { return [] }
+        return list
+    }
+
     private func validate(_ resp: URLResponse) throws {
         guard let http = resp as? HTTPURLResponse else { return }
         guard (200..<300).contains(http.statusCode) else {

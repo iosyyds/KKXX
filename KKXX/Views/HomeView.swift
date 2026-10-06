@@ -112,6 +112,9 @@ struct HomeView: View {
                             settings.avatarData = d
                         }
                     }
+                    if let me = try? await SyncService().myKx(settings: settings) {
+                        settings.myKxNumber = (me["kx"] as? String) ?? ""
+                    }
                 }
                 await checkAppInfo()
             }
