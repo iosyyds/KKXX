@@ -244,6 +244,9 @@ struct ChatView: View {
                     .padding(.vertical, 12)
                 }
                 .background(Color(red: 0.937, green: 0.937, blue: 0.941))
+                .onTapGesture {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
                 .onChange(of: messages.count) { _ in
                     if let last = messages.last, let id = last["id"] as? Int {
                         withAnimation { proxy.scrollTo(id, anchor: .bottom) }
