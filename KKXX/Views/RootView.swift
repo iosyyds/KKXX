@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 extension Notification.Name {
     /// 双击底部 Tab 时发送，各列表页监听并滚动到顶部
@@ -55,7 +56,39 @@ struct MainTabView: View {
         .task {
             // 启动即发起一次网络请求，触发系统「允许使用无线数据」弹窗
             _ = try? await SyncService().verify(settings: settings)
+            // 请求本地通知权限
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+            // 轮询好友消息
+            await pollMessages()
         }
+        .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { _ in
+            Task { await pollMessages() }
+        }
+    }
+
+    private func pollMessages() async {
+        guard settings.isLoggedIn else { return }
+        do {
+            let list = try await SyncService().friendList(settings: settings)
+            for f in list {
+                let unread = (f["unread"] as? Int) ?? 0
+                if unread > 0, let kx = f["kx_number"] as? String {
+                    let nick = (f["nickname"] as? String).flatMap { $0.isEmpty ? kx : $0 } ?? kx
+                    let content = try? await SyncService().pullMessages(kx: kx, after: 0, settings: settings)
+                    let lastText = (content?.last?["content"] as? String) ?? "新消息"
+                    notify(title: nick, body: lastText)
+                }
+            }
+        } catch { }
+    }
+
+    private func notify(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let req = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(req)
     }
 
     private var tabBody: some View {
