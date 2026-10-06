@@ -235,33 +235,42 @@ struct ChatView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 14) {
                         ForEach(messages.indices, id: \.self) { i in
                             bubble(messages[i])
                         }
                     }
-                    .padding()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
                 }
+                .background(Color(red: 0.937, green: 0.937, blue: 0.941))
                 .onChange(of: messages.count) { _ in
                     if let last = messages.last, let id = last["id"] as? Int {
                         withAnimation { proxy.scrollTo(id, anchor: .bottom) }
                     }
                 }
             }
-            HStack(spacing: 10) {
-                TextField("发消息…", text: $text, axis: .vertical)
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("发送消息…", text: $text, axis: .vertical)
                     .lineLimit(1...4)
-                    .padding(8)
-                    .background(Color(uiColor: .secondarySystemBackground))
+                    .padding(10)
+                    .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                 Button { send() } label: {
-                    Image(systemName: "arrow.up.circle.fill").font(.system(size: 30))
-                }.disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Text("发送")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(text.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray.opacity(0.5) : Color(red: 0.0, green: 0.82, blue: 0.38))
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+                .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .padding()
+            .padding(10)
+            .background(Color(red: 0.94, green: 0.94, blue: 0.95))
         }
-        .padding(.bottom, 90)
-        .navigationTitle("\(friendNick)（KX:\(kx)）")
+        .navigationTitle(friendNick)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             settings.tabBarHidden = true
@@ -275,15 +284,28 @@ struct ChatView: View {
 
     private func bubble(_ m: [String: Any]) -> some View {
         let mine = (m["mine"] as? Int) == 1
-        return HStack {
-            if mine { Spacer() }
-            Text(m["text"] as? String ?? "")
-                .padding(.horizontal, 14).padding(.vertical, 9)
-                .background(mine ? Color(red: 0.0, green: 0.76, blue: 0.38) : Color(uiColor: .secondarySystemBackground))
-                .foregroundColor(mine ? .white : .primary)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-            if !mine { Spacer() }
+        let content = m["text"] as? String ?? (m["content"] as? String ?? "")
+        return HStack(alignment: .top, spacing: 10) {
+            if mine {
+                Spacer()
+                Text(content)
+                    .font(.system(size: 16))
+                    .padding(.horizontal, 12).padding(.vertical, 9)
+                    .background(Color(red: 0.85, green: 0.96, blue: 0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color(red: 0.75, green: 0.9, blue: 0.75), lineWidth: 0.5))
+                avatarCircle(base64: settings.avatarData?.base64EncodedString() ?? "", size: 40)
+            } else {
+                avatarCircle(base64: "", size: 40)
+                Text(content)
+                    .font(.system(size: 16))
+                    .padding(.horizontal, 12).padding(.vertical, 9)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                Spacer()
+            }
         }
+        .padding(.horizontal, 8)
     }
 
     private func startPoll() {
