@@ -93,7 +93,7 @@ struct HomeView: View {
                 )
             ) {
                 Button("立即更新") {
-                    if let url = URL(string: "itms-services://?action=download-manifest&url=https://raw.githubusercontent.com/iosyyds/KKXX/main/manifest.plist") {
+                    if let url = URL(string: "https://gh-proxy.com/https://github.com/iosyyds/KKXX/releases/latest/download/KKXX.ipa") {
                         UIApplication.shared.open(url)
                     }
                     remoteVersion = nil
