@@ -24,77 +24,97 @@ struct BillsView: View {
     var body: some View {
         Group {
             if store.bills.filter({ !$0.deleted }).isEmpty {
-                EmptyHint(icon: "yensign.circle", title: "还没有账单", subtitle: "点右上角或首页 + 记一笔", color: brandGreen)
+                EmptyHint(icon: "yensign.circle", title: "还没有账单", subtitle: "点右上角 + 记一笔", color: brandGreen)
             } else {
-                VStack(spacing: 0) {
-                    Picker("", selection: $typeFilter) {
-                        Text("全部").tag(0)
-                        Text("支出").tag(1)
-                        Text("收入").tag(2)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-
-                    HStack {
-                        Button { prevMonth() } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.subheadline.weight(.semibold))
-                                .frame(width: 34, height: 34)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground))
-                                .clipShape(Circle())
-                        }
-                        Text(monthLabel)
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                        Button { nextMonth() } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.subheadline.weight(.semibold))
-                                .frame(width: 34, height: 34)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground))
-                                .clipShape(Circle())
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-
-                    ScrollViewReader { proxy in
-                        List {
-                            Section {
-                                HStack(spacing: 12) {
-                                    StatCell(label: "收入", value: yuan(income), color: .green, symbol: "arrow.down.circle.fill")
-                                    StatCell(label: "支出", value: yuan(expense), color: .orange, symbol: "arrow.up.circle.fill")
-                                    StatCell(label: "结余", value: yuan(income - expense), color: .primary, symbol: "equal.circle.fill")
+                List {
+                    // 本月概览大卡片
+                    Section {
+                        VStack(spacing: 16) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("本月支出")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                    Text(yuan(expense))
+                                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                                        .foregroundColor(.orange)
                                 }
-                                .padding(.vertical, 2)
-                            }
-                            .listRowBackground(Color.clear)
-
-                            Section("明细") {
-                                ForEach(visible) { bill in
-                                    Button { editing = bill } label: { BillRow(bill: bill) }
-                                        .buttonStyle(.plain)
-                                        .swipeActions(edge: .trailing) {
-                                            Button(role: .destructive) { store.softDeleteBill(id: bill.id) } label: {
-                                                Label("删除", systemImage: "trash")
-                                            }
-                                        }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    Text("本月收入")
+                                        .font(.footnote)
+                                        .foregroundColor(.secondary)
+                                    Text(yuan(income))
+                                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.green)
                                 }
                             }
-                        }
-                        .listStyle(.insetGrouped)
-                        .onReceive(NotificationCenter.default.publisher(for: .scrollToTop)) { n in
-                            if (n.userInfo?["tab"] as? Int) == 3 {
-                                withAnimation { proxy.scrollTo(visible.first?.id) }
+                            Divider()
+                            HStack {
+                                Label("结余 \(yuan(income - expense))", systemImage: "equal.circle.fill")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundColor(income - expense >= 0 ? .primary : .red)
+                                Spacer()
                             }
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    .listRowSeparator(.hidden)
+
+                    // 筛选分段 + 月份
+                    Section {
+                        Picker("", selection: $typeFilter) {
+                            Text("全部").tag(0)
+                            Text("支出").tag(1)
+                            Text("收入").tag(2)
+                        }
+                        .pickerStyle(.segmented)
+
+                        HStack {
+                            Button { prevMonth() } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(width: 32, height: 32)
+                                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                    .clipShape(Circle())
+                            }
+                            Text(monthLabel)
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                            Button { nextMonth() } label: {
+                                Image(systemName: "chevron.right")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(width: 32, height: 32)
+                                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                    .clipShape(Circle())
+                            }
+                        }
+                    }
+                    .listRowSeparator(.hidden)
+
+                    // 明细
+                    Section("明细") {
+                        ForEach(visible) { bill in
+                            Button { editing = bill } label: { BillRow(bill: bill) }
+                                .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) { store.softDeleteBill(id: bill.id) } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("记账")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            Button { editing = Bill() } label: { Image(systemName: "plus") }
+            Button { editing = Bill() } label: {
+                Image(systemName: "plus")
+                    .font(.title3.weight(.semibold))
+            }
         }
         .sheet(item: $editing) { b in BillEditorView(bill: b) }
     }
@@ -109,58 +129,3 @@ struct BillsView: View {
     private func prevMonth() { month = calendar.date(byAdding: .month, value: -1, to: month) ?? month }
     private func nextMonth() { month = calendar.date(byAdding: .month, value: 1, to: month) ?? month }
 }
-
-private struct StatCell: View {
-    let label: String
-    let value: String
-    let color: Color
-    let symbol: String
-
-    var body: some View {
-        VStack(spacing: 6) {
-            IconBadge(symbol: symbol, color: color, size: 30, corner: 9)
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-}
-
-private struct BillRow: View {
-    let bill: Bill
-    var body: some View {
-        HStack(spacing: 14) {
-            IconBadge(
-                symbol: bill.type == "income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill",
-                color: bill.type == "income" ? .green : .orange,
-                size: 42, corner: 12
-            )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(bill.category.isEmpty ? (bill.remark.isEmpty ? "未分类" : bill.remark) : bill.category)
-                    .font(.subheadline.weight(.medium))
-                Text(bill.remark.isEmpty ? shortDate(bill.billDate) : bill.remark)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer()
-            (Text(bill.type == "income" ? "+" : "-")
-                .foregroundColor(bill.type == "income" ? Color.green : Color.orange)
-             + Text(yuan(bill.amount))
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(bill.type == "income" ? Color.green : Color.orange))
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-#Preview { BillsView() }
