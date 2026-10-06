@@ -92,9 +92,15 @@ struct HomeView: View {
                     set: { if !$0 { remoteVersion = nil } }
                 )
             ) {
-                Button("知道了") { remoteVersion = nil }
+                Button("立即更新") {
+                    if let url = URL(string: "itms-services://?action=download-manifest&url=https://raw.githubusercontent.com/iosyyds/KKXX/main/manifest.plist") {
+                        UIApplication.shared.open(url)
+                    }
+                    remoteVersion = nil
+                }
+                Button("以后再说", role: .cancel) { remoteVersion = nil }
             } message: {
-                Text(updateNote.isEmpty ? "新版本已发布，请前往官方渠道下载更新。" : updateNote)
+                Text(updateNote.isEmpty ? "点击立即更新，将在 Safari 中安装新版，原有数据不会丢失。" : updateNote)
             }
             .task {
                 store.syncOnLaunchIfNeeded()
