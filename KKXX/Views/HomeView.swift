@@ -93,7 +93,7 @@ struct HomeView: View {
                 )
             ) {
                 Button("立即更新") {
-                    if let url = URL(string: "https://aka.doubaocdn.com/s/wLU2ztVw6e") {
+                    if let url = URL(string: "https://gh-proxy.com/https://github.com/iosyyds/KKXX/releases/latest/download/KKXX.ipa") {
                         UIApplication.shared.open(url)
                     }
                     remoteVersion = nil
