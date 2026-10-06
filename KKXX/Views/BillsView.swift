@@ -29,6 +29,39 @@ struct BillsView: View {
                 ScrollViewReader { proxy in
                     List {
                         Section {
+                            Picker("", selection: $typeFilter) {
+                                Text("全部").tag(0)
+                                Text("支出").tag(1)
+                                Text("收入").tag(2)
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        .listRowBackground(Color.clear)
+
+                        Section {
+                            HStack {
+                                Button { prevMonth() } label: {
+                                    Image(systemName: "chevron.left")
+                                        .font(.subheadline.weight(.semibold))
+                                        .frame(width: 34, height: 34)
+                                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                        .clipShape(Circle())
+                                }
+                                Text(monthLabel)
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                                Button { nextMonth() } label: {
+                                    Image(systemName: "chevron.right")
+                                        .font(.subheadline.weight(.semibold))
+                                        .frame(width: 34, height: 34)
+                                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                        .clipShape(Circle())
+                                }
+                            }
+                        }
+                        .listRowBackground(Color.clear)
+
+                        Section {
                             HStack(spacing: 12) {
                                 StatCell(label: "收入", value: yuan(income), color: .green, symbol: "arrow.down.circle.fill")
                                 StatCell(label: "支出", value: yuan(expense), color: .orange, symbol: "arrow.up.circle.fill")
@@ -60,40 +93,6 @@ struct BillsView: View {
             }
         }
         .navigationTitle("记账")
-        .safeAreaInset(edge: .top) {
-            VStack(spacing: 8) {
-                Picker("", selection: $typeFilter) {
-                    Text("全部").tag(0)
-                    Text("支出").tag(1)
-                    Text("收入").tag(2)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-
-                HStack {
-                    Button { prevMonth() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 34, height: 34)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground))
-                            .clipShape(Circle())
-                    }
-                    Text(monthLabel)
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                    Button { nextMonth() } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 34, height: 34)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground))
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding(.vertical, 6)
-            .background(.bar)
-        }
         .toolbar {
             Button { editing = Bill() } label: { Image(systemName: "plus") }
         }
