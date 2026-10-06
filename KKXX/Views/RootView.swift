@@ -61,7 +61,7 @@ struct MainTabView: View {
             // 轮询好友消息
             await pollMessages()
         }
-        .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { _ in
+        .onReceive(Timer.publish(every: 3, on: .main, in: .common).autoconnect()) { _ in
             Task { await pollMessages() }
         }
     }
