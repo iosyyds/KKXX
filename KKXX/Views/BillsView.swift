@@ -106,6 +106,7 @@ struct BillsView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
+                .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 110) }
             }
         }
         .navigationTitle("记账")
